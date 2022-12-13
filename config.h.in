@@ -1,0 +1,2 @@
+#define kn5toac_VERSION_MAJOR @kn5toac_VERSION_MAJOR@
+#define kn5toac_VERSION_MINOR @kn5toac_VERSION_MINOR@

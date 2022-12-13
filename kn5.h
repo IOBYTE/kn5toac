@@ -158,7 +158,11 @@ private:
             void dump(std::ostream& stream, const std::string& indent = "") const;
         };
 
-        int32_t                     type = 0;
+        enum NodeType : int32_t { NotSet, Transform, Mesh, SkinnedMesh };
+
+        static std::string to_string(NodeType nodeType);
+
+        NodeType                    type = NotSet;
         std::string                 name;
         bool                        active = false;
         Matrix                      matrix;

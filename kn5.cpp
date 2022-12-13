@@ -196,6 +196,23 @@ const kn5::Property* kn5::Material::find(const std::string& name) const
     return nullptr;
 }
 
+std::string kn5::Node::to_string(NodeType nodeType)
+{
+    if (nodeType == Transform)
+        return "Transform";
+
+    if (nodeType == Mesh)
+        return "Mesh";
+
+    if (nodeType == SkinnedMesh)
+        return "SkinnedMesh";
+
+    if (nodeType == NotSet)
+        return "NotSet";
+
+    return "Unknown(" + std::to_string(nodeType) + ")";
+}
+
 void kn5::Node::Vertex::read(std::istream& stream)
 {
     position[0] = readFloat(stream);
@@ -308,7 +325,7 @@ void kn5::Node::AnamatedVertex::dump(std::ostream& stream, const std::string& in
 
 void kn5::Node::read(std::istream& stream)
 {
-    type = readInt32(stream);
+    type = static_cast<NodeType>(readInt32(stream));
     name = readString(stream);
 
     int32_t childCount = readInt32(stream);
@@ -390,7 +407,7 @@ void kn5::Node::readAnimatedMesh(std::istream& stream)
 
 void kn5::Node::dump(std::ostream& stream, const std::string& indent) const
 {
-    stream << indent << "type: " << type << std::endl;
+    stream << indent << "type: " << kn5::Node::to_string(type) << std::endl;
     stream << indent << "name: " << name << std::endl;
     stream << indent << "active: " << (active ? "true" : "false") << std::endl;
 
@@ -627,7 +644,7 @@ void kn5::writeAc3d(const std::string& file)
 
 void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node)
 {
-    if (node.type == 1)
+    if (node.type == Node::Transform)
     {
         fout << "OBJECT group" << std::endl;
         fout << "name \"" << node.name << "\"" << std::endl;
@@ -642,7 +659,7 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node)
         if (node.matrix.isTranslation())
             fout << "loc " << node.matrix.data[3][0] << " " << node.matrix.data[3][1] << " " << node.matrix.data[3][2] << std::endl;
     }
-    else if (node.type == 2)
+    else if (node.type == Node::Mesh || node.type == Node::SkinnedMesh)
     {
         fout << "OBJECT poly" << std::endl;
         fout << "name \"" << node.name << "\"" << std::endl;
@@ -652,25 +669,38 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node)
         for (const auto& vertex : node.vertices)
             fout << vertex.position[0] << " " << vertex.position[1] << " " << vertex.position[2] << std::endl;
 
-#ifdef QUAD_MESH
-        const int step = 4;
-#else
-        const int step = 3;
-#endif
-        fout << "numsurf " << (node.indices.size() / step) << std::endl;
-        for (size_t i = 0; i < node.indices.size(); i += step)
+        float uvMult = 1.0f;
+
+        const Property* property = materials[node.materialID].find("useDetail");
+
+        if (property == nullptr || property->value == 0.0f)
         {
-#ifdef DOUBLE_SIDED
-            fout << "SURF 0x30" << std::endl;
-#else
+            property = materials[node.materialID].find("diffuseMult");
+
+            if (property != nullptr)
+                uvMult = property->value;
+        }
+        else
+        {
+            property = materials[node.materialID].find("detailUVMultiplier");
+
+            if (property != nullptr)
+                uvMult = property->value;
+        }
+
+        fout << "numsurf " << (node.indices.size() / 3) << std::endl;
+        for (size_t i = 0; i < node.indices.size(); i += 3)
+        {
             fout << "SURF 0x10" << std::endl;
-#endif
             fout << "mat " << node.materialID << std::endl;
-            fout << "refs " << step << std::endl;
-            for (size_t j = 0; j < step; j++)
+            fout << "refs 3" << std::endl;
+            for (size_t j = 0; j < 3; j++)
             {
                 const int index = node.indices[i + j];
-                fout << index << " " << node.vertices[index].texture[0] << " " << -node.vertices[index].texture[1] << std::endl;
+                if (node.type == Node::Mesh)
+                    fout << index << " " << (node.vertices[index].texture[0] * uvMult) << " " << (-node.vertices[index].texture[1] * uvMult) << std::endl;
+                else
+                    fout << index << " " << (node.anamatedVertices[index].texture[0] * uvMult) << " " << (-node.anamatedVertices[index].texture[1] * uvMult) << std::endl;
             }
         }
     }
