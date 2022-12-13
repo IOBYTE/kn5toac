@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="1">
+    <builddir>kn5toac-cppcheck-build-dir</builddir>
+    <platform>unknown</platform>
+    <importproject>kn5toac.sln</importproject>
+    <analyze-all-vs-configs>false</analyze-all-vs-configs>
+    <check-headers>true</check-headers>
+    <check-unused-templates>true</check-unused-templates>
+    <max-ctu-depth>2</max-ctu-depth>
+    <max-template-recursion>100</max-template-recursion>
+    <vs-configurations>
+        <config>Debug</config>
+    </vs-configurations>
+    <suppressions>
+        <suppression>clang-tidy-modernize-use-trailing-return-type</suppression>
+        <suppression>clang-tidy-readability-identifier-length</suppression>
+        <suppression>clang-tidy-fuchsia-default-arguments-calls</suppression>
+        <suppression>clang-tidy-altera-unroll-loops</suppression>
+        <suppression>clang-tidy-fuchsia-default-arguments-declarations</suppression>
+        <suppression>clang-tidy-modernize-return-braced-init-list</suppression>
+        <suppression>clang-tidy-altera-struct-pack-align</suppression>
+        <suppression>clang-tidy-misc-non-private-member-variables-in-classes</suppression>
+        <suppression>clang-tidy-altera-id-dependent-backward-branch</suppression>
+        <suppression>clang-analyzer</suppression>
+        <suppression>clang-tidy-bugprone-easily-swappable-parameters</suppression>
+    </suppressions>
+    <tools>
+        <tool>clang-tidy</tool>
+    </tools>
+</project>

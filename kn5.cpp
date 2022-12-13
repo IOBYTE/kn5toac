@@ -1,0 +1,684 @@
+#include "kn5.h"
+
+#include <fstream>
+#include <filesystem>
+
+int32_t kn5::readInt32(std::istream& stream)
+{
+    int32_t value;
+    stream.read(reinterpret_cast<char*>(&value), sizeof(int32_t));
+    return value;
+}
+
+float kn5::readFloat(std::istream& stream)
+{
+    float value;
+    stream.read(reinterpret_cast<char*>(&value), sizeof(float));
+    return value;
+}
+
+uint8_t kn5::readUint8(std::istream& stream)
+{
+    uint8_t value;
+    stream.read(reinterpret_cast<char*>(&value), sizeof(uint8_t));
+    return value;
+}
+
+uint16_t kn5::readUint16(std::istream& stream)
+{
+    uint16_t value;
+    stream.read(reinterpret_cast<char*>(&value), sizeof(uint16_t));
+    return value;
+}
+
+uint32_t kn5::readUint32(std::istream& stream)
+{
+    uint32_t value;
+    stream.read(reinterpret_cast<char*>(&value), sizeof(uint32_t));
+    return value;
+}
+
+bool kn5::readBool(std::istream& stream)
+{
+    bool value;
+    stream.read(reinterpret_cast<char*>(&value), sizeof(bool));
+    return value;
+}
+
+std::string kn5::readString(std::istream& stream, size_t length)
+{
+    char* text = new char[length + 1];
+    text[length] = 0;
+    stream.read(text, length);
+    std::string string(text, length);
+    delete[] text;
+    return string;
+}
+
+std::string kn5::readString(std::istream& stream)
+{
+    return readString(stream, readInt32(stream));
+}
+
+void kn5::Texture::read(std::istream& stream)
+{
+    type = readInt32(stream);
+    name = readString(stream);
+    const int size = readInt32(stream);
+    data.resize(size);
+    stream.read(data.data(), size);
+}
+
+void kn5::Texture::dump(std::ostream& stream, const std::string& indent) const
+{
+    stream << indent << "type: " << type << std::endl;
+    stream << indent << "name: " << name << std::endl;
+    stream << indent << "size: " << data.size() << std::endl;
+}
+
+
+void kn5::Sample::read(std::istream& stream)
+{
+    name = readString(stream);
+    slot = readInt32(stream);
+    textureName = readString(stream);
+}
+
+void kn5::Sample::dump(std::ostream& stream, const std::string& indent) const
+{
+    stream << indent << "name:        " << name << std::endl;
+    stream << indent << "slot:        " << slot << std::endl;
+    stream << indent << "textureName: " << textureName << std::endl;
+}
+
+void kn5::Property::read(std::istream& stream)
+{
+    name = readString(stream);
+    value = readFloat(stream);
+    value2[0] = readFloat(stream);
+    value2[1] = readFloat(stream);
+    value3[0] = readFloat(stream);
+    value3[1] = readFloat(stream);
+    value3[2] = readFloat(stream);
+    value4[0] = readFloat(stream);
+    value4[1] = readFloat(stream);
+    value4[2] = readFloat(stream);
+    value4[3] = readFloat(stream);
+}
+
+void kn5::Property::dump(std::ostream& stream, const std::string& indent) const
+{
+    stream << indent << "name:   " << name << std::endl;
+    stream << indent << "value:  " << value << std::endl;
+    stream << indent << "value2: " << value2[0] << ", " << value2[1] << std::endl;
+    stream << indent << "value3: " << value3[0] << ", " << value3[1] << ", " << value3[2] << std::endl;
+    stream << indent << "value5: " << value4[0] << ", " << value4[1] << ", " << value4[2] << ", " << value4[3] << std::endl;
+}
+
+void kn5::Material::read(std::istream& stream)
+{
+    name = readString(stream);
+    shaderName = readString(stream);
+    alphaBlendMode = static_cast<AlphaBlendMode>(readUint8(stream));
+    alphaTested = readBool(stream);
+    depthMode = static_cast<DepthMode>(readInt32(stream));
+
+    properties.resize(readInt32(stream));
+
+    for (auto& property : properties)
+        property.read(stream);
+
+    samples.resize(readInt32(stream));
+
+    for (auto& sample : samples)
+        sample.read(stream);
+}
+
+std::string kn5::Material::to_string(AlphaBlendMode mode)
+{
+    if (mode == Opaque)
+        return "Opaque";
+
+    if (mode == AlphaBlend)
+        return "AlphaBlend";
+
+    if (mode == AlphaToCoverage)
+        return "AlphaToCoverage";
+
+    return "Unknown(" + std::to_string(mode) + ")";
+}
+
+std::string kn5::Material::to_string(DepthMode mode)
+{
+    if (mode == DepthNormal)
+        return "DepthNormal";
+
+    if (mode == DepthNoWrite)
+        return "DepthNoWrite";
+
+    if (mode == DepthOff)
+        return "DepthOff";
+
+    return "Unknown(" + std::to_string(mode) + ")";
+}
+
+void kn5::Material::dump(std::ostream& stream, const std::string& indent) const
+{
+    stream << indent << "name:           " << name << std::endl;
+    stream << indent << "shaderName:     " << shaderName << std::endl;
+    stream << indent << "alphaBlendMode: " << kn5::Material::to_string(alphaBlendMode) << std::endl;
+    stream << indent << "alphaTested:    " << (alphaTested ? "true" : "false") << std::endl;
+    stream << indent << "depthMode:      " << kn5::Material::to_string(depthMode) << std::endl;
+
+    stream << indent << "properties:     " << properties.size() << std::endl;
+    for (size_t i = 0; i < properties.size(); i++)
+    {
+        stream << indent << "properties[" << i << "]" << std::endl;
+        properties[i].dump(stream, indent + "  ");
+    }
+
+    stream << indent << "samples:        " << samples.size() << std::endl;
+    for (size_t i = 0; i < samples.size(); i++)
+    {
+        stream << indent << "samples[" << i << "]" << std::endl;
+        samples[i].dump(stream, indent + "  ");
+    }
+}
+
+const kn5::Property* kn5::Material::find(const std::string& name) const
+{
+    for (size_t i = 0; i < properties.size(); i++)
+    {
+        if (properties[i].name == name)
+            return &properties[i];
+    }
+
+    return nullptr;
+}
+
+void kn5::Node::Vertex::read(std::istream& stream)
+{
+    position[0] = readFloat(stream);
+    position[1] = readFloat(stream);
+    position[2] = readFloat(stream);
+    normal[0] = readFloat(stream);
+    normal[1] = readFloat(stream);
+    normal[2] = readFloat(stream);
+    texture[0] = readFloat(stream);
+    texture[1] = readFloat(stream);
+    tangent[0] = readFloat(stream);
+    tangent[1] = readFloat(stream);
+    tangent[2] = readFloat(stream);
+}
+
+void kn5::Node::Vertex::dump(std::ostream& stream, const std::string& indent) const
+{
+    stream << indent << "position: " << position[0] << ", " << position[1] << ", " << position[2] << std::endl;
+    stream << indent << "normal:   " << normal[0] << ", " << normal[1] << ", " << normal[2] << std::endl;
+    stream << indent << "texture:  " << texture[0] << ", " << texture[1] << std::endl;
+    stream << indent << "tangent:  " << tangent[0] << ", " << tangent[1] << ", " << tangent[2] << std::endl;
+}
+
+void kn5::Node::BoundingSphere::read(std::istream& stream)
+{
+    center[0] = readFloat(stream);
+    center[1] = readFloat(stream);
+    center[2] = readFloat(stream);
+    radius = readFloat(stream);
+}
+
+void kn5::Node::BoundingSphere::dump(std::ostream& stream, const std::string& indent) const
+{
+    stream << indent << "center: " << center[0] << ", " << center[1] << ", " << center[2] << std::endl;
+    stream << indent << "radius:  " << radius << std::endl;
+}
+
+void kn5::Node::Matrix::read(std::istream& stream)
+{
+    for (size_t i = 0; i < 4; i++)
+    {
+        for (size_t j = 0; j < 4; j++)
+        {
+            data[i][j] = readFloat(stream);
+        }
+    }
+}
+
+void kn5::Node::Matrix::dump(std::ostream& stream, const std::string& indent) const
+{
+    stream << indent << "matrix: " << data[0][0] << ", " << data[0][1] << ", " << data[0][2] << ", " << data[0][3] << std::endl;
+    stream << indent << "        " << data[1][0] << ", " << data[1][1] << ", " << data[1][2] << ", " << data[1][3] << std::endl;
+    stream << indent << "        " << data[2][0] << ", " << data[2][1] << ", " << data[2][2] << ", " << data[2][3] << std::endl;
+    stream << indent << "        " << data[3][0] << ", " << data[3][1] << ", " << data[3][2] << ", " << data[3][3] << std::endl;
+}
+
+bool kn5::Node::Matrix::isIdentity() const
+{
+    return data[0][0] == 1 && data[0][1] == 0 && data[0][2] == 0 && data[0][3] == 0 &&
+           data[1][0] == 0 && data[1][1] == 1 && data[1][2] == 0 && data[1][3] == 0 &&
+           data[2][0] == 0 && data[2][1] == 0 && data[2][2] == 1 && data[2][3] == 0 &&
+           data[3][0] == 0 && data[3][1] == 0 && data[3][2] == 0 && data[3][3] == 1;
+}
+
+bool kn5::Node::Matrix::isRotation() const
+{
+    return data[0][0] != 1 || data[0][1] != 0 || data[0][2] != 0 ||
+           data[1][0] != 0 || data[1][1] != 1 || data[1][2] != 0 ||
+           data[2][0] != 0 || data[2][1] != 0 || data[2][2] != 1;
+}
+
+bool kn5::Node::Matrix::isTranslation() const
+{
+    return data[3][0] != 0 || data[3][1] != 0 || data[3][2] != 0;
+}
+
+void kn5::Node::Bone::read(std::istream& stream)
+{
+    name = readString(stream);
+    matrix.read(stream);
+}
+
+void kn5::Node::Bone::dump(std::ostream& stream, const std::string& indent) const
+{
+    stream << indent << "name:  " << name << std::endl;
+    matrix.dump(stream, indent);
+}
+
+void kn5::Node::AnamatedVertex::read(std::istream& stream)
+{
+    Vertex::read(stream);
+
+    weights[0] = readFloat(stream);
+    weights[1] = readFloat(stream);
+    weights[2] = readFloat(stream);
+    weights[3] = readFloat(stream);
+    weights[4] = readFloat(stream);
+    weights[5] = readFloat(stream);
+    weights[6] = readFloat(stream);
+    weights[7] = readFloat(stream);
+}
+
+void kn5::Node::AnamatedVertex::dump(std::ostream& stream, const std::string& indent) const
+{
+    Vertex::dump(stream, indent);
+
+    stream << indent << "weights:  " << weights[0] << ", " << weights[1] << ", " << weights[2] << ", " << weights[3] << ", "
+                                     << weights[0] << ", " << weights[1] << ", " << weights[2] << ", " << weights[3] << std::endl;
+}
+
+void kn5::Node::read(std::istream& stream)
+{
+    type = readInt32(stream);
+    name = readString(stream);
+
+    int32_t childCount = readInt32(stream);
+
+    active = readBool(stream);
+
+    switch (type)
+    {
+    case 1:
+        readTranslation(stream);
+        break;
+    case 2:
+        readMesh(stream);
+        break;
+    case 3:
+        readAnimatedMesh(stream);
+        break;
+    }
+
+    for (int i = 0; i < childCount; i++)
+        children.emplace_back(stream);
+}
+
+void kn5::Node::readTranslation(std::istream& stream)
+{
+    matrix.read(stream);
+}
+
+void kn5::Node::readMesh(std::istream& stream)
+{
+    castShadows = readBool(stream);
+    visible = readBool(stream);
+    transparent = readBool(stream);
+
+    vertices.resize(readInt32(stream));
+
+    for (auto & vertex : vertices)
+        vertex.read(stream);
+
+    indices.resize(readInt32(stream));
+
+    for (auto & index : indices)
+        index = readUint16(stream);
+
+    materialID = readInt32(stream);
+    layer = readUint32(stream);
+    lodIn = readFloat(stream);
+    lodOut = readFloat(stream);
+    boundingSphere.read(stream);
+    renderable = readBool(stream);
+}
+
+void kn5::Node::readAnimatedMesh(std::istream& stream)
+{
+    castShadows = readBool(stream);
+    visible = readBool(stream);
+    transparent = readBool(stream);
+
+    bones.resize(readInt32(stream));
+
+    for (auto& bone : bones)
+        bone.read(stream);
+
+    anamatedVertices.resize(readInt32(stream));
+
+    for (auto& vertex : anamatedVertices)
+        vertex.read(stream);
+
+    indices.resize(readInt32(stream));
+
+    for (auto& index : indices)
+        index = readUint16(stream);
+
+    materialID = readInt32(stream);
+    layer = readUint32(stream);
+    lodIn = readFloat(stream);
+    lodOut = readFloat(stream);
+}
+
+void kn5::Node::dump(std::ostream& stream, const std::string& indent) const
+{
+    stream << indent << "type: " << type << std::endl;
+    stream << indent << "name: " << name << std::endl;
+    stream << indent << "active: " << (active ? "true" : "false") << std::endl;
+
+    switch (type)
+    {
+    case 1:
+        matrix.dump(stream, indent);
+        break;
+    case 2:
+        stream << indent << "castShadows: " << (castShadows ? "true" : "false") << std::endl;
+        stream << indent << "visible:     " << (visible ? "true" : "false") << std::endl;
+        stream << indent << "transparent: " << (transparent ? "true" : "false") << std::endl;
+
+        stream << indent << "vertices:    " << vertices.size() << std::endl;
+        for (size_t i = 0; i < vertices.size(); i++)
+        {
+            stream << indent << "vertices[" << i << "]" << std::endl;
+            vertices[i].dump(stream, indent + "  ");
+        }
+
+        stream << indent << "indices:    " << indices.size() << std::endl;
+        for (size_t i = 0; i < indices.size(); i++)
+            stream << indent << "  indices[" << i << "]: " << indices[i] << std::endl;
+
+        stream << indent << "materialID: " << materialID << std::endl;
+        stream << indent << "layer:      " << layer << std::endl;
+        stream << indent << "lodIn:      " << lodIn << std::endl;
+        stream << indent << "lodOut:     " << lodOut << std::endl;
+        stream << indent << "boundingSphere:" << std::endl;
+        boundingSphere.dump(stream, indent + "  ");
+        stream << indent << "renderable: " << (renderable ? "true" : "false") << std::endl;
+        break;
+    case 3:
+        stream << indent << "castShadows: " << (castShadows ? "true" : "false") << std::endl;
+        stream << indent << "visible:     " << (visible ? "true" : "false") << std::endl;
+        stream << indent << "transparent: " << (transparent ? "true" : "false") << std::endl;
+
+        stream << indent << "bones:       " << bones.size() << std::endl;
+        for (size_t i = 0; i < bones.size(); i++)
+        {
+            stream << indent << "bones[" << i << "]" << std::endl;
+            bones[i].dump(stream, indent + "  ");
+        }
+
+        stream << indent << "anamatedVertices:    " << anamatedVertices.size() << std::endl;
+        for (size_t i = 0; i < anamatedVertices.size(); i++)
+        {
+            stream << indent << "anamatedVertices[" << i << "]" << std::endl;
+            anamatedVertices[i].dump(stream, indent + "  ");
+        }
+
+        stream << indent << "indices:    " << indices.size() << std::endl;
+        for (size_t i = 0; i < indices.size(); i++)
+            stream << indent << "  indices[" << i << "]: " << indices[i] << std::endl;
+
+        stream << indent << "materialID: " << materialID << std::endl;
+        stream << indent << "layer:      " << layer << std::endl;
+        stream << indent << "lodIn:      " << lodIn << std::endl;
+        stream << indent << "lodOut:     " << lodOut << std::endl;
+        break;
+    }
+
+    stream << indent << "children: " << children.size() << std::endl;
+    for (size_t i = 0; i < children.size(); i++)
+    {
+        stream << indent << "children[" << i << "]" << std::endl;
+        children[i].dump(stream, indent + "  ");
+    }
+}
+
+void kn5::readTextures(std::istream& stream)
+{
+    textures.resize(readInt32(stream));
+
+    for (auto& texture : textures)
+        texture.read(stream);
+}
+
+void kn5::writeTextures(const std::string& name) const
+{
+    std::filesystem::path directory = std::filesystem::canonical(name).parent_path();
+
+    directory.append("textures");
+
+    for (size_t i = 0; i < textures.size(); i++)
+    {
+        if (!std::filesystem::exists(directory))
+        {
+            if (!std::filesystem::create_directory(directory))
+                throw std::runtime_error("Couldn't create directory: " + directory.string());
+        }
+
+        std::filesystem::path texture = directory;
+
+        texture.append(textures[i].name);
+
+        if (!std::filesystem::exists(texture))
+        {
+            std::ofstream   fout(texture.string(), std::ios::binary);
+
+            if (!fout)
+                throw std::runtime_error("Couldn't create texture: " + texture.string());
+
+            fout.write(textures[i].data.data(), textures[i].data.size());
+
+            fout.close();
+        }
+    }
+}
+
+void kn5::readMaterials(std::istream& stream)
+{
+    materials.resize(readInt32(stream));
+
+    for (auto& material : materials)
+        material.read(stream);
+}
+
+void kn5::read(const std::string& name)
+{
+    std::ifstream   stream;
+
+    stream.open(name, std::ios::binary);
+
+    if (!stream)
+        throw std::runtime_error("Couldn't open file");
+
+    stream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+    if (readString(stream, 6) != "sc6969")
+        throw std::runtime_error("Not a valid kn5 file");
+
+    version = readInt32(stream);
+
+    if (version > 5)
+        unknown = readInt32(stream);
+
+    readTextures(stream);
+
+    writeTextures(name);
+
+    readMaterials(stream);
+
+    node.read(stream);
+}
+
+void kn5::dump(std::ostream& stream) const
+{
+    stream << "version: " << version << std::endl;
+
+    stream << "textures: " << textures.size() << std::endl;
+    for (size_t i = 0; i < textures.size(); i++)
+    {
+        stream << "textures[" << i << "]" << std::endl;
+        textures[i].dump(stream, "  ");
+    }
+
+    stream << "materials: " << materials.size() << std::endl;
+    for (size_t i = 0; i < materials.size(); i++)
+    {
+        stream << "materials[" << i << "]" << std::endl;
+        materials[i].dump(stream, "  ");
+    }
+
+    stream << "node:" << std::endl;
+    node.dump(stream, "  ");
+}
+
+void kn5::writeAc3d(const std::string& file)
+{
+    std::ofstream fout(file);
+
+    if (fout)
+    {
+        fout << "AC3Db" << std::endl;
+
+        for (const auto& material : materials)
+        {
+            fout << "MATERIAL " << "\"" << material.name << "\"";
+
+            const Property* property = material.find("ksDiffuse");
+
+            if (property != nullptr)
+                fout << " rgb " << property->value << " " << property->value << " " << property->value;
+            else
+                fout << " rgb 1 1 1";
+
+            property = material.find("ksAmbient");
+
+            if (property != nullptr)
+                fout << "  amb " << property->value << " " << property->value << " " << property->value;
+            else
+                fout << "  amb 1 1 1";
+
+            property = material.find("ksEmissive");
+
+            if (property != nullptr)
+                fout << "  emis " << property->value << " " << property->value << " " << property->value;
+            else
+                fout << "  emis 1 1 1";
+
+            property = material.find("ksSpecular");
+
+            if (property != nullptr)
+                fout << "  spec " << property->value << " " << property->value << " " << property->value;
+            else
+                fout << "  spec 1 1 1";
+
+            property = material.find("ksSpecularEXP");
+
+            if (property != nullptr)
+                fout << "  shi " << property->value;
+            else
+                fout << "  shi 0";
+
+            property = material.find("ksAlphaRef");
+
+            if (property != nullptr)
+                fout << "  trans " << property->value;
+            else
+                fout << "  trans 0";
+
+            fout << std::endl;
+        }
+
+        fout << "OBJECT world" << std::endl;
+        fout << "kids 1" << std::endl;
+
+        writeAc3dObject(fout, node);
+
+        fout.close();
+    }
+}
+
+void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node)
+{
+    if (node.type == 1)
+    {
+        fout << "OBJECT group" << std::endl;
+        fout << "name \"" << node.name << "\"" << std::endl;
+
+        if (node.matrix.isRotation())
+        {
+            fout << "rot " << node.matrix.data[0][0] << " " << node.matrix.data[0][1] << " " << node.matrix.data[0][2];
+            fout << " " << node.matrix.data[1][0] << " " << node.matrix.data[1][1] << " " << node.matrix.data[1][2];
+            fout << " " << node.matrix.data[2][0] << " " << node.matrix.data[2][1] << " " << node.matrix.data[2][2] << std::endl;
+        }
+
+        if (node.matrix.isTranslation())
+            fout << "loc " << node.matrix.data[3][0] << " " << node.matrix.data[3][1] << " " << node.matrix.data[3][2] << std::endl;
+    }
+    else if (node.type == 2)
+    {
+        fout << "OBJECT poly" << std::endl;
+        fout << "name \"" << node.name << "\"" << std::endl;
+        fout << "texture \"" << materials[node.materialID].samples[node.layer].textureName << "\"" << std::endl;
+        fout << "numvert " << node.vertices.size() << std::endl;
+
+        for (const auto& vertex : node.vertices)
+            fout << vertex.position[0] << " " << vertex.position[1] << " " << vertex.position[2] << std::endl;
+
+#ifdef QUAD_MESH
+        const int step = 4;
+#else
+        const int step = 3;
+#endif
+        fout << "numsurf " << (node.indices.size() / step) << std::endl;
+        for (size_t i = 0; i < node.indices.size(); i += step)
+        {
+#ifdef DOUBLE_SIDED
+            fout << "SURF 0x30" << std::endl;
+#else
+            fout << "SURF 0x10" << std::endl;
+#endif
+            fout << "mat " << node.materialID << std::endl;
+            fout << "refs " << step << std::endl;
+            for (size_t j = 0; j < step; j++)
+            {
+                const int index = node.indices[i + j];
+                fout << index << " " << node.vertices[index].texture[0] << " " << -node.vertices[index].texture[1] << std::endl;
+            }
+        }
+    }
+    else
+        return;
+
+    fout << "kids " << node.children.size() << std::endl;
+
+    for (const auto& child : node.children)
+        writeAc3dObject(fout, child);
+}
