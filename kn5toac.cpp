@@ -2,11 +2,15 @@
 #include "ini.h"
 
 #include <fstream>
+#include <filesystem>
 
 int main(int argc, char* argv[])
 {
-    bool writeModel = true;
-    bool dumpModel = true;
+    bool        writeModel = true;
+    bool        dumpModel = true;
+    bool        writeTextures = true;
+    bool        convertToPNG = true;
+    std::string textureDirectory("textures");
 
     if (argc != 2)
     {
@@ -46,7 +50,17 @@ int main(int argc, char* argv[])
         }
 
         if (writeModel)
-            model.writeAc3d(file + ".ac");
+            model.writeAc3d(file + ".ac", convertToPNG);
+
+        if (writeTextures)
+        {
+            std::filesystem::path directory = std::filesystem::canonical(file).parent_path();
+
+            if (!textureDirectory.empty())
+                directory.append(textureDirectory);
+
+            model.writeTextures(directory.string(), convertToPNG);
+        }
     }
     catch (std::ifstream::failure& e)
     {

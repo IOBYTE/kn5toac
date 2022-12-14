@@ -196,8 +196,9 @@ private:
     };
 
     void readTextures(std::istream& stream);
-    void writeTextures(const std::string& name) const;
     void readMaterials(std::istream& stream);
+
+    void writeAc3dObject(std::ostream& fout, const Node& node, bool convertToPNG) const;
 
     int32_t                 version = 0;
     int32_t                 unknown = 0;
@@ -210,8 +211,8 @@ public:
 
     void read(const std::string& name);
     void dump(std::ostream& stream) const;
-    void writeAc3d(const std::string& file);
-    void writeAc3dObject(std::ostream& fout, const Node& node);
+    void writeTextures(const std::string& directory, bool convertToPNG) const;
+    void writeAc3d(const std::string& file, bool convertToPNG) const;
 };
 
 #endif

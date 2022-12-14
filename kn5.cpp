@@ -486,34 +486,52 @@ void kn5::readTextures(std::istream& stream)
         texture.read(stream);
 }
 
-void kn5::writeTextures(const std::string& name) const
+void kn5::writeTextures(const std::string& directory, bool convertToPNG) const
 {
-    std::filesystem::path directory = std::filesystem::canonical(name).parent_path();
-
-    directory.append("textures");
+    if (!std::filesystem::exists(directory))
+    {
+        if (!std::filesystem::create_directory(directory))
+            throw std::runtime_error("Couldn't create directory: " + directory);
+    }
 
     for (size_t i = 0; i < textures.size(); i++)
     {
-        if (!std::filesystem::exists(directory))
+        std::filesystem::path texturePath(directory);
+
+        texturePath.append(textures[i].name);
+
+        std::string texture = texturePath.string();
+
+        if (!std::filesystem::exists(texturePath))
         {
-            if (!std::filesystem::create_directory(directory))
-                throw std::runtime_error("Couldn't create directory: " + directory.string());
-        }
-
-        std::filesystem::path texture = directory;
-
-        texture.append(textures[i].name);
-
-        if (!std::filesystem::exists(texture))
-        {
-            std::ofstream   fout(texture.string(), std::ios::binary);
+            std::ofstream   fout(texturePath.string(), std::ios::binary);
 
             if (!fout)
-                throw std::runtime_error("Couldn't create texture: " + texture.string());
+                throw std::runtime_error("Couldn't create texture: " + texture);
 
             fout.write(textures[i].data.data(), textures[i].data.size());
 
             fout.close();
+        }
+
+        if (convertToPNG && (texture.find(".png") == std::string::npos && texture.find(".PNG") == std::string::npos))
+        {
+            std::string png;
+
+            size_t extension = texture.find(".dds");
+
+            if (extension != std::string::npos)
+                png = texture.substr(0, extension) + ".png";
+            else if ((extension = texture.find(".DDS")) != std::string::npos)
+                png = texture.substr(0, extension) + ".png";
+
+            if (!png.empty() && !std::filesystem::exists(png))
+            {
+                std::string command("magick convert " + texture + " " + png);
+
+                if (system(command.c_str()) == -1)
+                    std::cerr << "failed to convert " << texture << " to " << png << std::endl;
+            }
         }
     }
 }
@@ -547,8 +565,6 @@ void kn5::read(const std::string& name)
 
     readTextures(stream);
 
-    writeTextures(name);
-
     readMaterials(stream);
 
     node.read(stream);
@@ -576,7 +592,7 @@ void kn5::dump(std::ostream& stream) const
     node.dump(stream, "  ");
 }
 
-void kn5::writeAc3d(const std::string& file)
+void kn5::writeAc3d(const std::string& file, bool convertToPNG) const
 {
     std::ofstream fout(file);
 
@@ -636,13 +652,13 @@ void kn5::writeAc3d(const std::string& file)
         fout << "OBJECT world" << std::endl;
         fout << "kids 1" << std::endl;
 
-        writeAc3dObject(fout, node);
+        writeAc3dObject(fout, node, convertToPNG);
 
         fout.close();
     }
 }
 
-void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node)
+void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, bool convertToPNG) const
 {
     if (node.type == Node::Transform)
     {
@@ -663,7 +679,23 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node)
     {
         fout << "OBJECT poly" << std::endl;
         fout << "name \"" << node.name << "\"" << std::endl;
-        fout << "texture \"" << materials[node.materialID].samples[node.layer].textureName << "\"" << std::endl;
+
+        std::string texture = materials[node.materialID].samples[node.layer].textureName;
+
+        if (convertToPNG && (texture.find(".png") == std::string::npos && texture.find(".PNG") == std::string::npos))
+        {
+            std::string png = texture;
+
+            size_t extension = texture.find(".dds");
+
+            if (extension != std::string::npos)
+                texture = texture.substr(0, extension) + ".png";
+            else if ((extension = png.find(".DDS")) != std::string::npos)
+                texture = texture.substr(0, extension) + ".png";
+        }
+
+        fout << "texture \"" << texture << "\"" << std::endl;
+
         fout << "numvert " << node.vertices.size() << std::endl;
 
         for (const auto& vertex : node.vertices)
@@ -710,5 +742,5 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node)
     fout << "kids " << node.children.size() << std::endl;
 
     for (const auto& child : node.children)
-        writeAc3dObject(fout, child);
+        writeAc3dObject(fout, child, convertToPNG);
 }
