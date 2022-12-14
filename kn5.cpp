@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <filesystem>
+#include <algorithm>
 
 int32_t kn5::readInt32(std::istream& stream)
 {
@@ -607,42 +608,61 @@ void kn5::writeAc3d(const std::string& file, bool convertToPNG) const
             const Property* property = material.find("ksDiffuse");
 
             if (property != nullptr)
-                fout << " rgb " << property->value << " " << property->value << " " << property->value;
+            {
+                float rgb = std::clamp(property->value, 0.0f, 1.0f);
+                fout << " rgb " << rgb << " " << rgb << " " << rgb;
+            }
             else
                 fout << " rgb 1 1 1";
 
             property = material.find("ksAmbient");
 
             if (property != nullptr)
-                fout << "  amb " << property->value << " " << property->value << " " << property->value;
+            {
+                float amb = std::clamp(property->value, 0.0f, 1.0f);
+                fout << "  amb " << amb << " " << amb << " " << amb;
+            }
             else
                 fout << "  amb 1 1 1";
 
             property = material.find("ksEmissive");
 
             if (property != nullptr)
-                fout << "  emis " << property->value << " " << property->value << " " << property->value;
+            {
+                float emis = std::clamp(property->value, 0.0f, 1.0f);
+                fout << "  emis " << emis << " " << emis << " " << emis;
+            }
             else
                 fout << "  emis 1 1 1";
 
             property = material.find("ksSpecular");
 
             if (property != nullptr)
-                fout << "  spec " << property->value << " " << property->value << " " << property->value;
+            {
+                float spec = std::clamp(property->value, 0.0f, 1.0f);
+                fout << "  spec " << spec << " " << spec << " " << spec;
+            }
             else
                 fout << "  spec 1 1 1";
 
-            property = material.find("ksSpecularEXP");
+            property = material.find("ksSpecularEXP");  // FIXME is this the right parameter?
 
             if (property != nullptr)
-                fout << "  shi " << property->value;
+            {
+                // FIXME should this be scaled?
+                float shi = std::clamp(property->value, 0.0f, 128.0f);
+                fout << "  shi " << static_cast<int>(shi);
+            }
             else
                 fout << "  shi 0";
 
-            property = material.find("ksAlphaRef");
+            property = material.find("ksAlphaRef");  // FIXME is this the right parameter?
 
             if (property != nullptr)
-                fout << "  trans " << property->value;
+            {
+                float trans = std::clamp(property->value, 0.0f, 1.0f);
+                fout << "  trans " << trans;
+            }
             else
                 fout << "  trans 0";
 
