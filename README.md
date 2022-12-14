@@ -7,6 +7,16 @@ I'm trying to convert Assetto Corsa kn5 files to AC3D files just to learn how th
 
 It should also be possible to generate a Speed Dreams configuration file from the ini and lut files.
 
+Status
+------
+
+I'm able to extract all the materials, textures and geometry without problems.  The cars render fine in AC3D without textures.
+
+Problems
+--------
+
+The cars require multiple layers of textures to render properly and AC3D only supports a single texture.  I'm selecting the first texture which doesn't work well when that texture is transparent because that surface becomes transparent.
+
 Build with CMake on Windows
 ---------------------------
 
