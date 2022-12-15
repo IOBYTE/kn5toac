@@ -15,7 +15,7 @@ I'm able to extract all the materials, textures and geometry without problems.  
 Problems
 --------
 
-The cars require multiple layers of textures to render properly and AC3D only supports a single texture.  I'm selecting the first texture which doesn't work well when that texture is transparent because that surface becomes transparent.
+The cars require multiple layers of textures to render properly and AC3D only supports a single texture.
 
 Build with CMake on Windows
 ---------------------------
