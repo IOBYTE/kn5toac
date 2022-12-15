@@ -528,7 +528,22 @@ void kn5::writeTextures(const std::string& directory, bool convertToPNG) const
 
             if (!png.empty() && !std::filesystem::exists(png))
             {
-                std::string command("magick convert " + texture + " " + png);
+                std::string command("magick convert " + texture + " ");
+
+                for (const auto & material : materials)
+                {
+                    if (material.samples[0].textureName == textures[i].name)
+                    {
+                        if (material.alphaBlendMode == Material::Opaque)
+                        {
+                            command += "-alpha off ";
+
+                            break;
+                        }
+                    }
+                }
+
+                command += png;
 
                 if (system(command.c_str()) == -1)
                     std::cerr << "failed to convert " << texture << " to " << png << std::endl;
@@ -737,7 +752,7 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, bool conver
             property = materials[node.materialID].find("detailUVMultiplier");
 
             if (property != nullptr)
-                uvMult = property->value;
+                uvMult = 1 / property->value;
         }
 
         fout << "numsurf " << (node.indices.size() / 3) << std::endl;
