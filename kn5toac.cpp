@@ -10,6 +10,7 @@ int main(int argc, char* argv[])
     bool        dumpModel = true;
     bool        writeTextures = true;
     bool        convertToPNG = true;
+    bool        outputACC = false;
     std::string textureDirectory("textures");
 
     if (argc != 2)
@@ -50,7 +51,12 @@ int main(int argc, char* argv[])
         }
 
         if (writeModel)
-            model.writeAc3d(file + ".ac", convertToPNG);
+        {
+            if (outputACC)
+                model.writeAcc(file + ".acc", convertToPNG);
+            else
+                model.writeAc3d(file + ".ac", convertToPNG);
+        }
 
         if (writeTextures)
         {

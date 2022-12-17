@@ -2,7 +2,7 @@
 <project version="1">
     <builddir>kn5toac-cppcheck-build-dir</builddir>
     <platform>unknown</platform>
-    <importproject>kn5toac.sln</importproject>
+    <importproject>build/kn5toac.sln</importproject>
     <analyze-all-vs-configs>false</analyze-all-vs-configs>
     <check-headers>true</check-headers>
     <check-unused-templates>true</check-unused-templates>

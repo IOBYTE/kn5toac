@@ -329,19 +329,19 @@ void kn5::Node::read(std::istream& stream)
     type = static_cast<NodeType>(readInt32(stream));
     name = readString(stream);
 
-    int32_t childCount = readInt32(stream);
+    const int32_t childCount = readInt32(stream);
 
     active = readBool(stream);
 
     switch (type)
     {
-    case 1:
+    case Transform:
         readTranslation(stream);
         break;
-    case 2:
+    case Mesh:
         readMesh(stream);
         break;
-    case 3:
+    case SkinnedMesh:
         readAnimatedMesh(stream);
         break;
     }
@@ -616,80 +616,90 @@ void kn5::writeAc3d(const std::string& file, bool convertToPNG) const
     {
         fout << "AC3Db" << std::endl;
 
-        for (const auto& material : materials)
-        {
-            fout << "MATERIAL " << "\"" << material.name << "\"";
-
-            const Property* property = material.find("ksDiffuse");
-
-            if (property != nullptr)
-            {
-                float rgb = std::clamp(property->value, 0.0f, 1.0f);
-                fout << " rgb " << rgb << " " << rgb << " " << rgb;
-            }
-            else
-                fout << " rgb 1 1 1";
-
-            property = material.find("ksAmbient");
-
-            if (property != nullptr)
-            {
-                float amb = std::clamp(property->value, 0.0f, 1.0f);
-                fout << "  amb " << amb << " " << amb << " " << amb;
-            }
-            else
-                fout << "  amb 1 1 1";
-
-            property = material.find("ksEmissive");
-
-            if (property != nullptr)
-            {
-                float emis = std::clamp(property->value, 0.0f, 1.0f);
-                fout << "  emis " << emis << " " << emis << " " << emis;
-            }
-            else
-                fout << "  emis 1 1 1";
-
-            property = material.find("ksSpecular");
-
-            if (property != nullptr)
-            {
-                float spec = std::clamp(property->value, 0.0f, 1.0f);
-                fout << "  spec " << spec << " " << spec << " " << spec;
-            }
-            else
-                fout << "  spec 1 1 1";
-
-            property = material.find("ksSpecularEXP");  // FIXME is this the right parameter?
-
-            if (property != nullptr)
-            {
-                // FIXME should this be scaled?
-                float shi = std::clamp(property->value, 0.0f, 128.0f);
-                fout << "  shi " << static_cast<int>(shi);
-            }
-            else
-                fout << "  shi 0";
-
-            property = material.find("ksAlphaRef");  // FIXME is this the right parameter?
-
-            if (property != nullptr)
-            {
-                float trans = std::clamp(property->value, 0.0f, 1.0f);
-                fout << "  trans " << trans;
-            }
-            else
-                fout << "  trans 0";
-
-            fout << std::endl;
-        }
+        writeAc3dMaterials(fout, node);
 
         fout << "OBJECT world" << std::endl;
+        fout << "kids 1" << std::endl;
+        fout << "OBJECT group" << std::endl;
+        fout << "rot " << 0 << " " << 0 << " " << -1;
+        fout << " " << 0 << " " << 1 << " " << 0;
+        fout << " " << 1 << " " << 0 << " " << 0 << std::endl;
         fout << "kids 1" << std::endl;
 
         writeAc3dObject(fout, node, convertToPNG);
 
         fout.close();
+    }
+}
+
+void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node) const
+{
+    for (const auto& material : materials)
+    {
+        fout << "MATERIAL " << "\"" << material.name << "\"";
+
+        const Property* property = material.find("ksDiffuse");
+
+        if (property != nullptr)
+        {
+            const float rgb = std::clamp(property->value, 0.0f, 1.0f);
+            fout << " rgb " << rgb << " " << rgb << " " << rgb;
+        }
+        else
+            fout << " rgb 1 1 1";
+
+        property = material.find("ksAmbient");
+
+        if (property != nullptr)
+        {
+            const float amb = std::clamp(property->value, 0.0f, 1.0f);
+            fout << "  amb " << amb << " " << amb << " " << amb;
+        }
+        else
+            fout << "  amb 1 1 1";
+
+        property = material.find("ksEmissive");
+
+        if (property != nullptr)
+        {
+            const float emis = std::clamp(property->value, 0.0f, 1.0f);
+            fout << "  emis " << emis << " " << emis << " " << emis;
+        }
+        else
+            fout << "  emis 1 1 1";
+
+        property = material.find("ksSpecular");
+
+        if (property != nullptr)
+        {
+            const float spec = std::clamp(property->value, 0.0f, 1.0f);
+            fout << "  spec " << spec << " " << spec << " " << spec;
+        }
+        else
+            fout << "  spec 1 1 1";
+
+        property = material.find("ksSpecularEXP");  // FIXME is this the right parameter?
+
+        if (property != nullptr)
+        {
+            // FIXME should this be scaled?
+            const float shi = std::clamp(property->value, 0.0f, 128.0f);
+            fout << "  shi " << static_cast<int>(shi);
+        }
+        else
+            fout << "  shi 0";
+
+        property = material.find("ksAlphaRef");  // FIXME is this the right parameter?
+
+        if (property != nullptr)
+        {
+            const float trans = std::clamp(property->value, 0.0f, 1.0f);
+            fout << "  trans " << trans;
+        }
+        else
+            fout << "  trans 0";
+
+        fout << std::endl;
     }
 }
 
@@ -719,7 +729,7 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, bool conver
 
         if (convertToPNG && (texture.find(".png") == std::string::npos && texture.find(".PNG") == std::string::npos))
         {
-            std::string png = texture;
+            const std::string png = texture;
 
             size_t extension = texture.find(".dds");
 
@@ -778,4 +788,116 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, bool conver
 
     for (const auto& child : node.children)
         writeAc3dObject(fout, child, convertToPNG);
+}
+
+void kn5::writeAcc(const std::string& file, bool convertToPNG) const
+{
+    std::ofstream fout(file);
+
+    if (fout)
+    {
+        fout << "AC3Db" << std::endl;
+
+        writeAc3dMaterials(fout, node);
+
+        fout << "OBJECT world" << std::endl;
+        fout << "kids 1" << std::endl;
+        fout << "OBJECT group" << std::endl;
+        fout << "rot " << 0 << " " << 0 << " " << -1;
+        fout << " " << 0 << " " << 1 << " " << 0;
+        fout << " " << 1 << " " << 0 << " " << 0 << std::endl;
+        fout << "kids 1" << std::endl;
+
+        writeAccObject(fout, node, convertToPNG);
+
+        fout.close();
+    }
+}
+
+void kn5::writeAccObject(std::ostream& fout, const kn5::Node& node, bool convertToPNG) const
+{
+    if (node.type == Node::Transform)
+    {
+        fout << "OBJECT group" << std::endl;
+        fout << "name \"" << node.name << "\"" << std::endl;
+
+        if (node.matrix.isRotation())
+        {
+            fout << "rot " << node.matrix.data[0][0] << " " << node.matrix.data[0][1] << " " << node.matrix.data[0][2];
+            fout << " " << node.matrix.data[1][0] << " " << node.matrix.data[1][1] << " " << node.matrix.data[1][2];
+            fout << " " << node.matrix.data[2][0] << " " << node.matrix.data[2][1] << " " << node.matrix.data[2][2] << std::endl;
+        }
+
+        if (node.matrix.isTranslation())
+            fout << "loc " << node.matrix.data[3][0] << " " << node.matrix.data[3][1] << " " << node.matrix.data[3][2] << std::endl;
+    }
+    else if (node.type == Node::Mesh || node.type == Node::SkinnedMesh)
+    {
+        fout << "OBJECT poly" << std::endl;
+        fout << "name \"" << node.name << "\"" << std::endl;
+
+        std::string texture = materials[node.materialID].samples[node.layer].textureName;
+
+        if (convertToPNG && (texture.find(".png") == std::string::npos && texture.find(".PNG") == std::string::npos))
+        {
+            const std::string png = texture;
+
+            size_t extension = texture.find(".dds");
+
+            if (extension != std::string::npos)
+                texture = texture.substr(0, extension) + ".png";
+            else if ((extension = png.find(".DDS")) != std::string::npos)
+                texture = texture.substr(0, extension) + ".png";
+        }
+
+        fout << "texture \"" << texture << "\" base" << std::endl;
+
+        fout << "numvert " << node.vertices.size() << std::endl;
+
+        for (const auto& vertex : node.vertices)
+            fout << vertex.position[0] << " " << vertex.position[1] << " " << vertex.position[2] << " "
+                 << vertex.normal[0] << " " << vertex.normal[1] << " " << vertex.normal[2] << std::endl;
+
+        float uvMult = 1.0f;
+
+        const Property* property = materials[node.materialID].find("useDetail");
+
+        if (property == nullptr || property->value == 0.0f)
+        {
+            property = materials[node.materialID].find("diffuseMult");
+
+            if (property != nullptr)
+                uvMult = property->value;
+        }
+        else
+        {
+            property = materials[node.materialID].find("detailUVMultiplier");
+
+            if (property != nullptr)
+                uvMult = 1 / property->value;
+        }
+
+        fout << "numsurf " << (node.indices.size() / 3) << std::endl;
+        for (size_t i = 0; i < node.indices.size(); i += 3)
+        {
+            fout << "SURF 0x10" << std::endl;
+            fout << "mat " << node.materialID << std::endl;
+            fout << "refs 3" << std::endl;
+            for (size_t j = 0; j < 3; j++)
+            {
+                const int index = node.indices[i + j];
+                if (node.type == Node::Mesh)
+                    fout << index << " " << (node.vertices[index].texture[0] * uvMult) << " " << (-node.vertices[index].texture[1] * uvMult) << std::endl;
+                else
+                    fout << index << " " << (node.anamatedVertices[index].texture[0] * uvMult) << " " << (-node.anamatedVertices[index].texture[1] * uvMult) << std::endl;
+            }
+        }
+    }
+    else
+        return;
+
+    fout << "kids " << node.children.size() << std::endl;
+
+    for (const auto& child : node.children)
+        writeAccObject(fout, child, convertToPNG);
 }
