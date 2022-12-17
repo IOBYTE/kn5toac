@@ -97,7 +97,8 @@ private:
 
         void read(std::istream& stream);
         void  dump(std::ostream& stream, const std::string& indent = "") const;
-        const Property* find(const std::string& name) const;
+        const Property* findProperty(const std::string& name) const;
+        const Sample* findSample(const std::string& name) const;
     };
 
     struct Node

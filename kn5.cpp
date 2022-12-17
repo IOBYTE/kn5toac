@@ -186,7 +186,18 @@ void kn5::Material::dump(std::ostream& stream, const std::string& indent) const
     }
 }
 
-const kn5::Property* kn5::Material::find(const std::string& name) const
+const kn5::Sample* kn5::Material::findSample(const std::string& name) const
+{
+    for (size_t i = 0; i < samples.size(); i++)
+    {
+        if (samples[i].name == name)
+            return &samples[i];
+    }
+
+    return nullptr;
+}
+
+const kn5::Property* kn5::Material::findProperty(const std::string& name) const
 {
     for (size_t i = 0; i < properties.size(); i++)
     {
@@ -638,7 +649,7 @@ void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node) const
     {
         fout << "MATERIAL " << "\"" << material.name << "\"";
 
-        const Property* property = material.find("ksDiffuse");
+        const Property* property = material.findProperty("ksDiffuse");
 
         if (property != nullptr)
         {
@@ -648,7 +659,7 @@ void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node) const
         else
             fout << " rgb 1 1 1";
 
-        property = material.find("ksAmbient");
+        property = material.findProperty("ksAmbient");
 
         if (property != nullptr)
         {
@@ -658,7 +669,7 @@ void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node) const
         else
             fout << "  amb 1 1 1";
 
-        property = material.find("ksEmissive");
+        property = material.findProperty("ksEmissive");
 
         if (property != nullptr)
         {
@@ -668,7 +679,7 @@ void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node) const
         else
             fout << "  emis 1 1 1";
 
-        property = material.find("ksSpecular");
+        property = material.findProperty("ksSpecular");
 
         if (property != nullptr)
         {
@@ -678,7 +689,7 @@ void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node) const
         else
             fout << "  spec 1 1 1";
 
-        property = material.find("ksSpecularEXP");  // FIXME is this the right parameter?
+        property = material.findProperty("ksSpecularEXP");  // FIXME is this the right parameter?
 
         if (property != nullptr)
         {
@@ -689,7 +700,7 @@ void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node) const
         else
             fout << "  shi 0";
 
-        property = material.find("ksAlphaRef");  // FIXME is this the right parameter?
+        property = material.findProperty("ksAlphaRef");  // FIXME is this the right parameter?
 
         if (property != nullptr)
         {
@@ -748,18 +759,18 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, bool conver
 
         float uvMult = 1.0f;
 
-        const Property* property = materials[node.materialID].find("useDetail");
+        const Property* property = materials[node.materialID].findProperty("useDetail");
 
         if (property == nullptr || property->value == 0.0f)
         {
-            property = materials[node.materialID].find("diffuseMult");
+            property = materials[node.materialID].findProperty("diffuseMult");
 
             if (property != nullptr)
                 uvMult = property->value;
         }
         else
         {
-            property = materials[node.materialID].find("detailUVMultiplier");
+            property = materials[node.materialID].findProperty("detailUVMultiplier");
 
             if (property != nullptr)
                 uvMult = 1 / property->value;
@@ -860,18 +871,18 @@ void kn5::writeAccObject(std::ostream& fout, const kn5::Node& node, bool convert
 
         float uvMult = 1.0f;
 
-        const Property* property = materials[node.materialID].find("useDetail");
+        const Property* property = materials[node.materialID].findProperty("useDetail");
 
         if (property == nullptr || property->value == 0.0f)
         {
-            property = materials[node.materialID].find("diffuseMult");
+            property = materials[node.materialID].findProperty("diffuseMult");
 
             if (property != nullptr)
                 uvMult = property->value;
         }
         else
         {
-            property = materials[node.materialID].find("detailUVMultiplier");
+            property = materials[node.materialID].findProperty("detailUVMultiplier");
 
             if (property != nullptr)
                 uvMult = 1 / property->value;
