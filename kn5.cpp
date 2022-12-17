@@ -736,7 +736,11 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, bool conver
         fout << "OBJECT poly" << std::endl;
         fout << "name \"" << node.name << "\"" << std::endl;
 
-        std::string texture = materials[node.materialID].samples[node.layer].textureName;
+        const Property* useDetail = materials[node.materialID].findProperty("useDetail");
+        const Sample* txDetail = materials[node.materialID].findSample("txDetail");
+        const Sample* txDiffuse = materials[node.materialID].findSample("txDiffuse");
+
+        std::string texture = ((useDetail && useDetail != 0) && txDetail) ? txDetail->textureName : txDiffuse->textureName;
 
         if (convertToPNG && (texture.find(".png") == std::string::npos && texture.find(".PNG") == std::string::npos))
         {
@@ -847,7 +851,11 @@ void kn5::writeAccObject(std::ostream& fout, const kn5::Node& node, bool convert
         fout << "OBJECT poly" << std::endl;
         fout << "name \"" << node.name << "\"" << std::endl;
 
-        std::string texture = materials[node.materialID].samples[node.layer].textureName;
+        const Property* useDetail = materials[node.materialID].findProperty("useDetail");
+        const Sample* txDetail = materials[node.materialID].findSample("txDetail");
+        const Sample* txDiffuse = materials[node.materialID].findSample("txDiffuse");
+
+        std::string texture = ((useDetail && useDetail != 0) && txDetail) ? txDetail->textureName : txDiffuse->textureName;
 
         if (convertToPNG && (texture.find(".png") == std::string::npos && texture.find(".PNG") == std::string::npos))
         {
