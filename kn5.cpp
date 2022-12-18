@@ -619,7 +619,7 @@ void kn5::dump(std::ostream& stream) const
     node.dump(stream, "  ");
 }
 
-void kn5::writeAc3d(const std::string& file, bool convertToPNG) const
+void kn5::writeAc3d(const std::string& file, bool convertToPNG, bool outputACC, bool useDiffuse) const
 {
     std::ofstream fout(file);
 
@@ -637,7 +637,7 @@ void kn5::writeAc3d(const std::string& file, bool convertToPNG) const
         fout << " " << 1 << " " << 0 << " " << 0 << std::endl;
         fout << "kids 1" << std::endl;
 
-        writeAc3dObject(fout, node, convertToPNG);
+        writeAc3dObject(fout, node, convertToPNG, outputACC, useDiffuse);
 
         fout.close();
     }
@@ -714,7 +714,7 @@ void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node) const
     }
 }
 
-void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, bool convertToPNG) const
+void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, bool convertToPNG, bool outputACC, bool useDiffuse) const
 {
     if (node.type == Node::Transform)
     {
@@ -736,11 +736,18 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, bool conver
         fout << "OBJECT poly" << std::endl;
         fout << "name \"" << node.name << "\"" << std::endl;
 
-        const Property* useDetail = materials[node.materialID].findProperty("useDetail");
-        const Sample* txDetail = materials[node.materialID].findSample("txDetail");
+        std::string texture;
         const Sample* txDiffuse = materials[node.materialID].findSample("txDiffuse");
 
-        std::string texture = ((useDetail && useDetail != 0) && txDetail) ? txDetail->textureName : txDiffuse->textureName;
+        if (useDiffuse)
+            texture = txDiffuse->textureName;
+        else
+        {
+            const Property* useDetail = materials[node.materialID].findProperty("useDetail");
+            const Sample* txDetail = materials[node.materialID].findSample("txDetail");
+
+            texture = ((useDetail && useDetail != 0) && txDetail) ? txDetail->textureName : txDiffuse->textureName;
+        }
 
         if (convertToPNG && (texture.find(".png") == std::string::npos && texture.find(".PNG") == std::string::npos))
         {
@@ -754,30 +761,55 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, bool conver
                 texture = texture.substr(0, extension) + ".png";
         }
 
-        fout << "texture \"" << texture << "\"" << std::endl;
+        if (outputACC)
+        {
+            fout << "texture \"" << texture << "\" base" << std::endl;
+            fout << "texture empty_texture_no_mapping tiled" << std::endl;
+            fout << "texture empty_texture_no_mapping skids" << std::endl;
+            fout << "texture empty_texture_no_mapping shad" << std::endl;
+        }
+        else
+            fout << "texture \"" << texture << "\"" << std::endl;
 
         fout << "numvert " << node.vertices.size() << std::endl;
 
         for (const auto& vertex : node.vertices)
-            fout << vertex.position[0] << " " << vertex.position[1] << " " << vertex.position[2] << std::endl;
+        {
+            fout << vertex.position[0] << " " << vertex.position[1] << " " << vertex.position[2];
+
+            if (outputACC)
+                fout << " " << vertex.normal[0] << " " << vertex.normal[1] << " " << vertex.normal[2] << std::endl;
+
+            fout << std::endl;
+        }
 
         float uvMult = 1.0f;
 
-        const Property* property = materials[node.materialID].findProperty("useDetail");
-
-        if (property == nullptr || property->value == 0.0f)
+        if (useDiffuse)
         {
-            property = materials[node.materialID].findProperty("diffuseMult");
+            const Property* property = materials[node.materialID].findProperty("diffuseMult");
 
             if (property != nullptr)
                 uvMult = property->value;
         }
         else
         {
-            property = materials[node.materialID].findProperty("detailUVMultiplier");
+            const Property* property = materials[node.materialID].findProperty("useDetail");
 
-            if (property != nullptr)
-                uvMult = 1 / property->value;
+            if (property == nullptr || property->value == 0.0f)
+            {
+                property = materials[node.materialID].findProperty("diffuseMult");
+
+                if (property != nullptr)
+                    uvMult = property->value;
+            }
+            else
+            {
+                property = materials[node.materialID].findProperty("detailUVMultiplier");
+
+                if (property != nullptr)
+                    uvMult = 1 / property->value;
+            }
         }
 
         fout << "numsurf " << (node.indices.size() / 3) << std::endl;
@@ -802,121 +834,5 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, bool conver
     fout << "kids " << node.children.size() << std::endl;
 
     for (const auto& child : node.children)
-        writeAc3dObject(fout, child, convertToPNG);
-}
-
-void kn5::writeAcc(const std::string& file, bool convertToPNG) const
-{
-    std::ofstream fout(file);
-
-    if (fout)
-    {
-        fout << "AC3Db" << std::endl;
-
-        writeAc3dMaterials(fout, node);
-
-        fout << "OBJECT world" << std::endl;
-        fout << "kids 1" << std::endl;
-        fout << "OBJECT group" << std::endl;
-        fout << "rot " << 0 << " " << 0 << " " << -1;
-        fout << " " << 0 << " " << 1 << " " << 0;
-        fout << " " << 1 << " " << 0 << " " << 0 << std::endl;
-        fout << "kids 1" << std::endl;
-
-        writeAccObject(fout, node, convertToPNG);
-
-        fout.close();
-    }
-}
-
-void kn5::writeAccObject(std::ostream& fout, const kn5::Node& node, bool convertToPNG) const
-{
-    if (node.type == Node::Transform)
-    {
-        fout << "OBJECT group" << std::endl;
-        fout << "name \"" << node.name << "\"" << std::endl;
-
-        if (node.matrix.isRotation())
-        {
-            fout << "rot " << node.matrix.data[0][0] << " " << node.matrix.data[0][1] << " " << node.matrix.data[0][2];
-            fout << " " << node.matrix.data[1][0] << " " << node.matrix.data[1][1] << " " << node.matrix.data[1][2];
-            fout << " " << node.matrix.data[2][0] << " " << node.matrix.data[2][1] << " " << node.matrix.data[2][2] << std::endl;
-        }
-
-        if (node.matrix.isTranslation())
-            fout << "loc " << node.matrix.data[3][0] << " " << node.matrix.data[3][1] << " " << node.matrix.data[3][2] << std::endl;
-    }
-    else if (node.type == Node::Mesh || node.type == Node::SkinnedMesh)
-    {
-        fout << "OBJECT poly" << std::endl;
-        fout << "name \"" << node.name << "\"" << std::endl;
-
-        const Property* useDetail = materials[node.materialID].findProperty("useDetail");
-        const Sample* txDetail = materials[node.materialID].findSample("txDetail");
-        const Sample* txDiffuse = materials[node.materialID].findSample("txDiffuse");
-
-        std::string texture = ((useDetail && useDetail != 0) && txDetail) ? txDetail->textureName : txDiffuse->textureName;
-
-        if (convertToPNG && (texture.find(".png") == std::string::npos && texture.find(".PNG") == std::string::npos))
-        {
-            const std::string png = texture;
-
-            size_t extension = texture.find(".dds");
-
-            if (extension != std::string::npos)
-                texture = texture.substr(0, extension) + ".png";
-            else if ((extension = png.find(".DDS")) != std::string::npos)
-                texture = texture.substr(0, extension) + ".png";
-        }
-
-        fout << "texture \"" << texture << "\" base" << std::endl;
-
-        fout << "numvert " << node.vertices.size() << std::endl;
-
-        for (const auto& vertex : node.vertices)
-            fout << vertex.position[0] << " " << vertex.position[1] << " " << vertex.position[2] << " "
-                 << vertex.normal[0] << " " << vertex.normal[1] << " " << vertex.normal[2] << std::endl;
-
-        float uvMult = 1.0f;
-
-        const Property* property = materials[node.materialID].findProperty("useDetail");
-
-        if (property == nullptr || property->value == 0.0f)
-        {
-            property = materials[node.materialID].findProperty("diffuseMult");
-
-            if (property != nullptr)
-                uvMult = property->value;
-        }
-        else
-        {
-            property = materials[node.materialID].findProperty("detailUVMultiplier");
-
-            if (property != nullptr)
-                uvMult = 1 / property->value;
-        }
-
-        fout << "numsurf " << (node.indices.size() / 3) << std::endl;
-        for (size_t i = 0; i < node.indices.size(); i += 3)
-        {
-            fout << "SURF 0x10" << std::endl;
-            fout << "mat " << node.materialID << std::endl;
-            fout << "refs 3" << std::endl;
-            for (size_t j = 0; j < 3; j++)
-            {
-                const int index = node.indices[i + j];
-                if (node.type == Node::Mesh)
-                    fout << index << " " << (node.vertices[index].texture[0] * uvMult) << " " << (-node.vertices[index].texture[1] * uvMult) << std::endl;
-                else
-                    fout << index << " " << (node.anamatedVertices[index].texture[0] * uvMult) << " " << (-node.anamatedVertices[index].texture[1] * uvMult) << std::endl;
-            }
-        }
-    }
-    else
-        return;
-
-    fout << "kids " << node.children.size() << std::endl;
-
-    for (const auto& child : node.children)
-        writeAccObject(fout, child, convertToPNG);
+        writeAc3dObject(fout, child, convertToPNG, outputACC, useDiffuse);
 }

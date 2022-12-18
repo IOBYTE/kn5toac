@@ -11,6 +11,7 @@ int main(int argc, char* argv[])
     bool        writeTextures = true;
     bool        convertToPNG = true;
     bool        outputACC = false;
+    bool        useDiffuse = true;
     std::string textureDirectory("textures");
 
     if (argc != 2)
@@ -51,12 +52,7 @@ int main(int argc, char* argv[])
         }
 
         if (writeModel)
-        {
-            if (outputACC)
-                model.writeAcc(file + ".acc", convertToPNG);
-            else
-                model.writeAc3d(file + ".ac", convertToPNG);
-        }
+            model.writeAc3d(file + ".ac", convertToPNG, outputACC, useDiffuse);
 
         if (writeTextures)
         {
