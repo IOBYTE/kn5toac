@@ -12,7 +12,7 @@ Status
 
 I'm able to extract all the materials, textures and geometry without problems.  The cars render fine in AC3D when forcing use of just the diffuse textures. The cars require multiple layers of textures to render properly and AC3D only supports a single texture. Assetto Corsa uses shaders to apply the textures and there is no way to do that in AC3D.
 
-The kn5 file format uses a different coordinate system and I added a rotation node make it compatable with AC3D.  That works for AC3D but Speed Dreams doesn't like it.
+The kn5 file format uses a different coordinate system and I added a rotation node to make it compatable with AC3D.  That works for AC3D but Speed Dreams doesn't like it.
 
 Build with CMake on Windows
 ---------------------------
