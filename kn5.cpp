@@ -78,21 +78,21 @@ void kn5::Texture::dump(std::ostream& stream, const std::string& indent) const
 }
 
 
-void kn5::Sample::read(std::istream& stream)
+void kn5::TextureMapping::read(std::istream& stream)
 {
     name = readString(stream);
     slot = readInt32(stream);
     textureName = readString(stream);
 }
 
-void kn5::Sample::dump(std::ostream& stream, const std::string& indent) const
+void kn5::TextureMapping::dump(std::ostream& stream, const std::string& indent) const
 {
     stream << indent << "name:        " << name << std::endl;
     stream << indent << "slot:        " << slot << std::endl;
     stream << indent << "textureName: " << textureName << std::endl;
 }
 
-void kn5::Property::read(std::istream& stream)
+void kn5::ShaderProperty::read(std::istream& stream)
 {
     name = readString(stream);
     value = readFloat(stream);
@@ -107,7 +107,7 @@ void kn5::Property::read(std::istream& stream)
     value4[3] = readFloat(stream);
 }
 
-void kn5::Property::dump(std::ostream& stream, const std::string& indent) const
+void kn5::ShaderProperty::dump(std::ostream& stream, const std::string& indent) const
 {
     stream << indent << "name:   " << name << std::endl;
     stream << indent << "value:  " << value << std::endl;
@@ -124,15 +124,15 @@ void kn5::Material::read(std::istream& stream)
     alphaTested = readBool(stream);
     depthMode = static_cast<DepthMode>(readInt32(stream));
 
-    properties.resize(readInt32(stream));
+    shaderProperties.resize(readInt32(stream));
 
-    for (auto& property : properties)
-        property.read(stream);
+    for (auto& shaderProperty : shaderProperties)
+        shaderProperty.read(stream);
 
-    samples.resize(readInt32(stream));
+    textureMappings.resize(readInt32(stream));
 
-    for (auto& sample : samples)
-        sample.read(stream);
+    for (auto& textureMapping : textureMappings)
+        textureMapping.read(stream);
 }
 
 std::string kn5::Material::to_string(AlphaBlendMode mode)
@@ -165,44 +165,44 @@ std::string kn5::Material::to_string(DepthMode mode)
 
 void kn5::Material::dump(std::ostream& stream, const std::string& indent) const
 {
-    stream << indent << "name:           " << name << std::endl;
-    stream << indent << "shaderName:     " << shaderName << std::endl;
-    stream << indent << "alphaBlendMode: " << kn5::Material::to_string(alphaBlendMode) << std::endl;
-    stream << indent << "alphaTested:    " << (alphaTested ? "true" : "false") << std::endl;
-    stream << indent << "depthMode:      " << kn5::Material::to_string(depthMode) << std::endl;
+    stream << indent << "name:             " << name << std::endl;
+    stream << indent << "shaderName:       " << shaderName << std::endl;
+    stream << indent << "alphaBlendMode:   " << kn5::Material::to_string(alphaBlendMode) << std::endl;
+    stream << indent << "alphaTested:      " << (alphaTested ? "true" : "false") << std::endl;
+    stream << indent << "depthMode:        " << kn5::Material::to_string(depthMode) << std::endl;
 
-    stream << indent << "properties:     " << properties.size() << std::endl;
-    for (size_t i = 0; i < properties.size(); i++)
+    stream << indent << "shaderProperties: " << shaderProperties.size() << std::endl;
+    for (size_t i = 0; i < shaderProperties.size(); i++)
     {
-        stream << indent << "properties[" << i << "]" << std::endl;
-        properties[i].dump(stream, indent + "  ");
+        stream << indent << "shaderProperties[" << i << "]" << std::endl;
+        shaderProperties[i].dump(stream, indent + "  ");
     }
 
-    stream << indent << "samples:        " << samples.size() << std::endl;
-    for (size_t i = 0; i < samples.size(); i++)
+    stream << indent << "textureMappings:  " << textureMappings.size() << std::endl;
+    for (size_t i = 0; i < textureMappings.size(); i++)
     {
-        stream << indent << "samples[" << i << "]" << std::endl;
-        samples[i].dump(stream, indent + "  ");
+        stream << indent << "textureMappings[" << i << "]" << std::endl;
+        textureMappings[i].dump(stream, indent + "  ");
     }
 }
 
-const kn5::Sample* kn5::Material::findSample(const std::string& name) const
+const kn5::TextureMapping* kn5::Material::findTextureMapping(const std::string& name) const
 {
-    for (size_t i = 0; i < samples.size(); i++)
+    for (size_t i = 0; i < textureMappings.size(); i++)
     {
-        if (samples[i].name == name)
-            return &samples[i];
+        if (textureMappings[i].name == name)
+            return &textureMappings[i];
     }
 
     return nullptr;
 }
 
-const kn5::Property* kn5::Material::findProperty(const std::string& name) const
+const kn5::ShaderProperty* kn5::Material::findShaderProperty(const std::string& name) const
 {
-    for (size_t i = 0; i < properties.size(); i++)
+    for (size_t i = 0; i < shaderProperties.size(); i++)
     {
-        if (properties[i].name == name)
-            return &properties[i];
+        if (shaderProperties[i].name == name)
+            return &shaderProperties[i];
     }
 
     return nullptr;
@@ -275,10 +275,11 @@ void kn5::Node::Matrix::read(std::istream& stream)
 
 void kn5::Node::Matrix::dump(std::ostream& stream, const std::string& indent) const
 {
-    stream << indent << "matrix: " << data[0][0] << ", " << data[0][1] << ", " << data[0][2] << ", " << data[0][3] << std::endl;
-    stream << indent << "        " << data[1][0] << ", " << data[1][1] << ", " << data[1][2] << ", " << data[1][3] << std::endl;
-    stream << indent << "        " << data[2][0] << ", " << data[2][1] << ", " << data[2][2] << ", " << data[2][3] << std::endl;
-    stream << indent << "        " << data[3][0] << ", " << data[3][1] << ", " << data[3][2] << ", " << data[3][3] << std::endl;
+    stream << indent << "matrix:" << std::endl;
+    stream << indent << "  " << data[0][0] << ", " << data[0][1] << ", " << data[0][2] << ", " << data[0][3] << std::endl;
+    stream << indent << "  " << data[1][0] << ", " << data[1][1] << ", " << data[1][2] << ", " << data[1][3] << std::endl;
+    stream << indent << "  " << data[2][0] << ", " << data[2][1] << ", " << data[2][2] << ", " << data[2][3] << std::endl;
+    stream << indent << "  " << data[3][0] << ", " << data[3][1] << ", " << data[3][2] << ", " << data[3][3] << std::endl;
 }
 
 bool kn5::Node::Matrix::isIdentity() const
@@ -321,18 +322,19 @@ void kn5::Node::AnamatedVertex::read(std::istream& stream)
     weights[1] = readFloat(stream);
     weights[2] = readFloat(stream);
     weights[3] = readFloat(stream);
-    weights[4] = readFloat(stream);
-    weights[5] = readFloat(stream);
-    weights[6] = readFloat(stream);
-    weights[7] = readFloat(stream);
+
+    indices[0] = readFloat(stream);
+    indices[1] = readFloat(stream);
+    indices[2] = readFloat(stream);
+    indices[3] = readFloat(stream);
 }
 
 void kn5::Node::AnamatedVertex::dump(std::ostream& stream, const std::string& indent) const
 {
     Vertex::dump(stream, indent);
 
-    stream << indent << "weights:  " << weights[0] << ", " << weights[1] << ", " << weights[2] << ", " << weights[3] << ", "
-                                     << weights[0] << ", " << weights[1] << ", " << weights[2] << ", " << weights[3] << std::endl;
+    stream << indent << "weights:  " << weights[0] << ", " << weights[1] << ", " << weights[2] << ", " << weights[3] << std::endl;
+    stream << indent << "indices:  " << indices[0] << ", " << indices[1] << ", " << indices[2] << ", " << indices[3] << std::endl;
 }
 
 void kn5::Node::read(std::istream& stream)
@@ -419,9 +421,9 @@ void kn5::Node::readAnimatedMesh(std::istream& stream)
 
 void kn5::Node::dump(std::ostream& stream, const std::string& indent) const
 {
-    stream << indent << "type: " << kn5::Node::to_string(type) << std::endl;
-    stream << indent << "name: " << name << std::endl;
-    stream << indent << "active: " << (active ? "true" : "false") << std::endl;
+    stream << indent << "type:        " << kn5::Node::to_string(type) << std::endl;
+    stream << indent << "name:        " << name << std::endl;
+    stream << indent << "active:      " << (active ? "true" : "false") << std::endl;
 
     switch (type)
     {
@@ -543,7 +545,7 @@ void kn5::writeTextures(const std::string& directory, bool convertToPNG) const
 
                 for (const auto & material : materials)
                 {
-                    if (material.samples[0].textureName == textures[i].name)
+                    if (material.textureMappings[0].textureName == textures[i].name)
                     {
                         if (material.alphaBlendMode == Material::Opaque)
                         {
@@ -649,7 +651,7 @@ void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node) const
     {
         fout << "MATERIAL " << "\"" << material.name << "\"";
 
-        const Property* property = material.findProperty("ksDiffuse");
+        const ShaderProperty* property = material.findShaderProperty("ksDiffuse");
 
         if (property != nullptr)
         {
@@ -659,7 +661,7 @@ void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node) const
         else
             fout << " rgb 1 1 1";
 
-        property = material.findProperty("ksAmbient");
+        property = material.findShaderProperty("ksAmbient");
 
         if (property != nullptr)
         {
@@ -669,7 +671,7 @@ void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node) const
         else
             fout << "  amb 1 1 1";
 
-        property = material.findProperty("ksEmissive");
+        property = material.findShaderProperty("ksEmissive");
 
         if (property != nullptr)
         {
@@ -679,7 +681,7 @@ void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node) const
         else
             fout << "  emis 1 1 1";
 
-        property = material.findProperty("ksSpecular");
+        property = material.findShaderProperty("ksSpecular");
 
         if (property != nullptr)
         {
@@ -689,7 +691,7 @@ void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node) const
         else
             fout << "  spec 1 1 1";
 
-        property = material.findProperty("ksSpecularEXP");  // FIXME is this the right parameter?
+        property = material.findShaderProperty("ksSpecularEXP");  // FIXME is this the right parameter?
 
         if (property != nullptr)
         {
@@ -700,7 +702,7 @@ void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node) const
         else
             fout << "  shi 0";
 
-        property = material.findProperty("ksAlphaRef");  // FIXME is this the right parameter?
+        property = material.findShaderProperty("ksAlphaRef");  // FIXME is this the right parameter?
 
         if (property != nullptr)
         {
@@ -737,14 +739,14 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, bool conver
         fout << "name \"" << node.name << "\"" << std::endl;
 
         std::string texture;
-        const Sample* txDiffuse = materials[node.materialID].findSample("txDiffuse");
+        const TextureMapping* txDiffuse = materials[node.materialID].findTextureMapping("txDiffuse");
 
         if (useDiffuse)
             texture = txDiffuse->textureName;
         else
         {
-            const Property* useDetail = materials[node.materialID].findProperty("useDetail");
-            const Sample* txDetail = materials[node.materialID].findSample("txDetail");
+            const ShaderProperty* useDetail = materials[node.materialID].findShaderProperty("useDetail");
+            const TextureMapping* txDetail = materials[node.materialID].findTextureMapping("txDetail");
 
             texture = ((useDetail && useDetail != 0) && txDetail) ? txDetail->textureName : txDiffuse->textureName;
         }
@@ -787,25 +789,25 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, bool conver
 
         if (useDiffuse)
         {
-            const Property* property = materials[node.materialID].findProperty("diffuseMult");
+            const ShaderProperty* property = materials[node.materialID].findShaderProperty("diffuseMult");
 
             if (property != nullptr)
                 uvMult = property->value;
         }
         else
         {
-            const Property* property = materials[node.materialID].findProperty("useDetail");
+            const ShaderProperty* property = materials[node.materialID].findShaderProperty("useDetail");
 
             if (property == nullptr || property->value == 0.0f)
             {
-                property = materials[node.materialID].findProperty("diffuseMult");
+                property = materials[node.materialID].findShaderProperty("diffuseMult");
 
                 if (property != nullptr)
                     uvMult = property->value;
             }
             else
             {
-                property = materials[node.materialID].findProperty("detailUVMultiplier");
+                property = materials[node.materialID].findShaderProperty("detailUVMultiplier");
 
                 if (property != nullptr)
                     uvMult = 1 / property->value;

@@ -34,15 +34,15 @@ private:
         void dump(std::ostream& stream, const std::string& indent = "") const;
     };
 
-    struct Sample
+    struct TextureMapping
     {
         std::string name;
         int32_t     slot = 0;
         std::string textureName;
 
-        Sample() = default;
+        TextureMapping() = default;
 
-        explicit Sample(std::istream& stream)
+        explicit TextureMapping(std::istream& stream)
         {
             read(stream);
         }
@@ -51,7 +51,7 @@ private:
         void dump(std::ostream& stream, const std::string& indent = "") const;
     };
 
-    struct Property
+    struct ShaderProperty
     {
         std::string name;
         float       value = 0;
@@ -59,9 +59,9 @@ private:
         float       value3[3] = { 0, 0, 0 };
         float       value4[4] = { 0, 0, 0, 0 };
 
-        Property() = default;
+        ShaderProperty() = default;
 
-        explicit Property(std::istream& stream)
+        explicit ShaderProperty(std::istream& stream)
         {
             read(stream);
         }
@@ -80,13 +80,13 @@ private:
 
         static std::string to_string(DepthMode mode);
 
-        std::string             name;
-        std::string             shaderName;
-        AlphaBlendMode          alphaBlendMode = Opaque;
-        bool                    alphaTested = false;
-        DepthMode               depthMode = DepthNormal;
-        std::vector<Property>   properties;
-        std::vector<Sample>     samples;
+        std::string                 name;
+        std::string                 shaderName;
+        AlphaBlendMode              alphaBlendMode = Opaque;
+        bool                        alphaTested = false;
+        DepthMode                   depthMode = DepthNormal;
+        std::vector<ShaderProperty> shaderProperties;
+        std::vector<TextureMapping> textureMappings;
 
         Material() = default;
 
@@ -97,8 +97,8 @@ private:
 
         void read(std::istream& stream);
         void  dump(std::ostream& stream, const std::string& indent = "") const;
-        const Property* findProperty(const std::string& name) const;
-        const Sample* findSample(const std::string& name) const;
+        const ShaderProperty* findShaderProperty(const std::string& name) const;
+        const TextureMapping* findTextureMapping(const std::string& name) const;
     };
 
     struct Node
@@ -152,7 +152,8 @@ private:
 
         struct AnamatedVertex : public Vertex
         {
-            float   weights[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+            float   weights[4] = { 0, 0, 0, 0 };
+            float   indices[4] = { 0, 0, 0, 0 };
 
             AnamatedVertex() = default;
             void read(std::istream& stream);
