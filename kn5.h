@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <array>
 
 class kn5
 {
@@ -51,13 +52,25 @@ private:
         void dump(std::ostream& stream, const std::string& indent = "") const;
     };
 
+    struct Vec2 : public std::array<float, 2>
+    {
+    };
+
+    struct Vec3 : public std::array<float, 3>
+    {
+    };
+
+    struct Vec4 : public std::array<float, 4>
+    {
+    };
+
     struct ShaderProperty
     {
         std::string name;
         float       value = 0;
-        float       value2[2] = { 0, 0 };
-        float       value3[3] = { 0, 0, 0 };
-        float       value4[4] = { 0, 0, 0, 0 };
+        Vec2        value2 = { 0, 0 };
+        Vec3        value3 = { 0, 0, 0 };
+        Vec4        value4 = { 0, 0, 0, 0 };
 
         ShaderProperty() = default;
 
@@ -105,10 +118,10 @@ private:
     {
         struct Vertex
         {
-            float   position[3] = { 0, 0, 0 };
-            float   normal[3] = { 0, 0, 0 };
-            float   texture[2] = { 0 , 0 };
-            float   tangent[3] = { 0, 0, 0 };
+            Vec3    position = { 0, 0, 0 };
+            Vec3    normal = { 0, 0, 0 };
+            Vec3    texture = { 0 , 0 };
+            Vec3    tangent = { 0, 0, 0 };
 
             Vertex() = default;
             void read(std::istream& stream);
@@ -117,7 +130,7 @@ private:
 
         struct BoundingSphere
         {
-            float   center[3] = { 0, 0, 0 };
+            Vec3    center = { 0, 0, 0 };
             float   radius = 0;
 
             void read(std::istream& stream);
@@ -152,8 +165,8 @@ private:
 
         struct AnamatedVertex : public Vertex
         {
-            float   weights[4] = { 0, 0, 0, 0 };
-            float   indices[4] = { 0, 0, 0, 0 };
+            Vec4    weights = { 0, 0, 0, 0 };
+            Vec4    indices = { 0, 0, 0, 0 };
 
             AnamatedVertex() = default;
             void read(std::istream& stream);
