@@ -83,6 +83,66 @@ kn5::Vec4 kn5::readVec4(std::istream& stream)
     return vec;
 }
 
+kn5::Vec3 kn5::Vec3::transformPoint(const Matrix& matrix) const
+{
+    Vec3 dst;
+
+    float t0 = at(0);
+    float t1 = at(1);
+    float t2 = at(2);
+
+    dst[0] = t0 * matrix.data[0][0] + t1 * matrix.data[1][0] + t2 * matrix.data[2][0] + matrix.data[3][0];
+    dst[1] = t0 * matrix.data[0][1] + t1 * matrix.data[1][1] + t2 * matrix.data[2][1] + matrix.data[3][1];
+    dst[2] = t0 * matrix.data[0][2] + t1 * matrix.data[1][2] + t2 * matrix.data[2][2] + matrix.data[3][2];
+
+    return dst;
+}
+
+kn5::Vec3 kn5::Vec3::transformVector(const Matrix& matrix) const
+{
+    Vec3 dst;
+
+    float t0 = at(0);
+    float t1 = at(1);
+    float t2 = at(2);
+
+    dst[0] = t0 * matrix.data[0][0] + t1 * matrix.data[1][0] + t2 * matrix.data[2][0];
+    dst[1] = t0 * matrix.data[0][1] + t1 * matrix.data[1][1] + t2 * matrix.data[2][1];
+    dst[2] = t0 * matrix.data[0][2] + t1 * matrix.data[1][2] + t2 * matrix.data[2][2];
+
+    return dst;
+}
+
+kn5::Matrix kn5::Matrix::multiply(const Matrix & matrix) const
+{
+    Matrix dst;
+
+    for (int j = 0; j < 4; j++)
+    {
+        dst.data[0][j] = matrix.data[0][0] * (*this).data[0][j] +
+            matrix.data[0][1] * (*this).data[1][j] +
+            matrix.data[0][2] * (*this).data[2][j] +
+            matrix.data[0][3] * (*this).data[3][j];
+
+        dst.data[1][j] = matrix.data[1][0] * (*this).data[0][j] +
+            matrix.data[1][1] * (*this).data[1][j] +
+            matrix.data[1][2] * (*this).data[2][j] +
+            matrix.data[1][3] * (*this).data[3][j];
+
+        dst.data[2][j] = matrix.data[2][0] * (*this).data[0][j] +
+            matrix.data[2][1] * (*this).data[1][j] +
+            matrix.data[2][2] * (*this).data[2][j] +
+            matrix.data[2][3] * (*this).data[3][j];
+
+        dst.data[3][j] = matrix.data[3][0] * (*this).data[0][j] +
+            matrix.data[3][1] * (*this).data[1][j] +
+            matrix.data[3][2] * (*this).data[2][j] +
+            matrix.data[3][3] * (*this).data[3][j];
+    }
+
+    return dst;
+}
+
 std::string kn5::readString(std::istream& stream)
 {
     return readString(stream, readInt32(stream));
@@ -103,7 +163,6 @@ void kn5::Texture::dump(std::ostream& stream, const std::string& indent) const
     stream << indent << "name: " << name << std::endl;
     stream << indent << "size: " << data.size() << std::endl;
 }
-
 
 void kn5::TextureMapping::read(std::istream& stream)
 {
@@ -262,6 +321,13 @@ void kn5::Node::Vertex::dump(std::ostream& stream, const std::string& indent) co
     stream << indent << "tangent:  " << tangent[0] << ", " << tangent[1] << ", " << tangent[2] << std::endl;
 }
 
+void kn5::Node::Vertex::transform(const Matrix& matrix)
+{
+    position = position.transformPoint(matrix);
+    normal = normal.transformVector(matrix);
+    tangent = tangent.transformVector(matrix);
+}
+
 void kn5::Node::BoundingSphere::read(std::istream& stream)
 {
     center = readVec3(stream);
@@ -274,7 +340,7 @@ void kn5::Node::BoundingSphere::dump(std::ostream& stream, const std::string& in
     stream << indent << "radius:  " << radius << std::endl;
 }
 
-void kn5::Node::Matrix::read(std::istream& stream)
+void kn5::Matrix::read(std::istream& stream)
 {
     for (size_t i = 0; i < 4; i++)
     {
@@ -285,7 +351,7 @@ void kn5::Node::Matrix::read(std::istream& stream)
     }
 }
 
-void kn5::Node::Matrix::dump(std::ostream& stream, const std::string& indent) const
+void kn5::Matrix::dump(std::ostream& stream, const std::string& indent) const
 {
     stream << indent << "matrix:" << std::endl;
     stream << indent << "  " << data[0][0] << ", " << data[0][1] << ", " << data[0][2] << ", " << data[0][3] << std::endl;
@@ -294,7 +360,7 @@ void kn5::Node::Matrix::dump(std::ostream& stream, const std::string& indent) co
     stream << indent << "  " << data[3][0] << ", " << data[3][1] << ", " << data[3][2] << ", " << data[3][3] << std::endl;
 }
 
-bool kn5::Node::Matrix::isIdentity() const
+bool kn5::Matrix::isIdentity() const
 {
     return data[0][0] == 1 && data[0][1] == 0 && data[0][2] == 0 && data[0][3] == 0 &&
            data[1][0] == 0 && data[1][1] == 1 && data[1][2] == 0 && data[1][3] == 0 &&
@@ -302,14 +368,14 @@ bool kn5::Node::Matrix::isIdentity() const
            data[3][0] == 0 && data[3][1] == 0 && data[3][2] == 0 && data[3][3] == 1;
 }
 
-bool kn5::Node::Matrix::isRotation() const
+bool kn5::Matrix::isRotation() const
 {
     return data[0][0] != 1 || data[0][1] != 0 || data[0][2] != 0 ||
            data[1][0] != 0 || data[1][1] != 1 || data[1][2] != 0 ||
            data[2][0] != 0 || data[2][1] != 0 || data[2][2] != 1;
 }
 
-bool kn5::Node::Matrix::isTranslation() const
+bool kn5::Matrix::isTranslation() const
 {
     return data[3][0] != 0 || data[3][1] != 0 || data[3][2] != 0;
 }
@@ -422,6 +488,24 @@ void kn5::Node::readAnimatedMesh(std::istream& stream)
     layer = readUint32(stream);
     lodIn = readFloat(stream);
     lodOut = readFloat(stream);
+}
+
+void kn5::Node::transform(const Matrix& xform)
+{
+    if (type != Transform)
+    {
+        for (auto& vertex : vertices)
+            vertex.transform(xform);
+    }
+    else
+    {
+        const Matrix newXform = xform.multiply(matrix);
+
+        matrix = Matrix();
+
+        for (auto& child : children)
+            child.transform(newXform);
+    }
 }
 
 void kn5::Node::dump(std::ostream& stream, const std::string& indent) const
@@ -626,6 +710,11 @@ void kn5::dump(std::ostream& stream) const
     node.dump(stream, "  ");
 }
 
+void kn5::transform(const Matrix& matrix)
+{
+    node.transform(matrix);
+}
+
 void kn5::writeAc3d(const std::string& file, bool convertToPNG, bool outputACC, bool useDiffuse) const
 {
     std::ofstream fout(file);
@@ -637,11 +726,6 @@ void kn5::writeAc3d(const std::string& file, bool convertToPNG, bool outputACC, 
         writeAc3dMaterials(fout, node);
 
         fout << "OBJECT world" << std::endl;
-        fout << "kids 1" << std::endl;
-        fout << "OBJECT group" << std::endl;
-        fout << "rot " << 0 << " " << 0 << " " << -1;
-        fout << " " << 0 << " " << 1 << " " << 0;
-        fout << " " << 1 << " " << 0 << " " << 0 << std::endl;
         fout << "kids 1" << std::endl;
 
         writeAc3dObject(fout, node, convertToPNG, outputACC, useDiffuse);

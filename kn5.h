@@ -8,6 +8,26 @@
 
 class kn5
 {
+public:
+    struct Matrix
+    {
+        float   data[4][4] =
+        {
+             { 1.0f, 0.0f, 0.0f, 0.0f },
+             { 0.0f, 1.0f, 0.0f, 0.0f },
+             { 0.0f, 0.0f, 1.0f, 0.0f },
+             { 0.0f, 0.0f, 0.0f, 1.0f }
+        };
+
+        void read(std::istream& stream);
+        void dump(std::ostream& stream, const std::string& indent = "") const;
+        bool isIdentity() const;
+        bool isRotation() const;
+        bool isTranslation() const;
+
+        Matrix multiply(const Matrix& matrix) const;
+    };
+
 private:
     struct Vec2 : public std::array<float, 2>
     {
@@ -15,6 +35,8 @@ private:
 
     struct Vec3 : public std::array<float, 3>
     {
+        Vec3 transformPoint(const Matrix& matrix) const;
+        Vec3 transformVector(const Matrix& matrix) const;
     };
 
     struct Vec4 : public std::array<float, 4>
@@ -129,6 +151,7 @@ private:
             Vertex() = default;
             void read(std::istream& stream);
             void dump(std::ostream& stream, const std::string& indent = "") const;
+            void transform(const Matrix& matrix);
         };
 
         struct BoundingSphere
@@ -138,23 +161,6 @@ private:
 
             void read(std::istream& stream);
             void dump(std::ostream& stream, const std::string& indent = "") const;
-        };
-
-        struct Matrix
-        {
-            float   data[4][4] = 
-            {
-                 { 1.0f, 0.0f, 0.0f, 0.0f },
-                 { 0.0f, 1.0f, 0.0f, 0.0f },
-                 { 0.0f, 0.0f, 1.0f, 0.0f },
-                 { 0.0f, 0.0f, 0.0f, 1.0f }
-            };
-
-            void read(std::istream& stream);
-            void dump(std::ostream& stream, const std::string& indent = "") const;
-            bool isIdentity() const;
-            bool isRotation() const;
-            bool isTranslation() const;
         };
 
         struct Bone
@@ -211,6 +217,7 @@ private:
         void readTranslation(std::istream& stream);
         void readMesh(std::istream& stream);
         void readAnimatedMesh(std::istream& stream);
+        void transform(const Matrix& matrix);
     };
 
     void readTextures(std::istream& stream);
@@ -230,6 +237,7 @@ public:
 
     void read(const std::string& name);
     void dump(std::ostream& stream) const;
+    void transform(const Matrix& matrix);
     void writeTextures(const std::string& directory, bool convertToPNG) const;
     void writeAc3d(const std::string& file, bool convertToPNG, bool outputACC, bool useDiffuse) const;
 };

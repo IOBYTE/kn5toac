@@ -52,7 +52,33 @@ int main(int argc, char* argv[])
         }
 
         if (writeModel)
-            model.writeAc3d(file + ".ac", convertToPNG, outputACC, useDiffuse);
+        {
+            kn5::Matrix xform;
+
+            xform.data[0][0] = 0;
+            xform.data[0][1] = 0;
+            xform.data[0][2] = -1;
+            xform.data[0][3] = 0;
+
+            xform.data[1][0] = 0;
+            xform.data[1][1] = 1;
+            xform.data[1][2] = 0;
+            xform.data[1][3] = 0;
+
+            xform.data[2][0] = 1;
+            xform.data[2][1] = 0;
+            xform.data[2][2] = 0;
+            xform.data[2][3] = 0;
+
+            xform.data[3][0] = 0;
+            xform.data[3][1] = 0;
+            xform.data[3][2] = 0;
+            xform.data[3][3] = 1;
+
+            model.transform(xform);
+
+            model.writeAc3d(file + (outputACC ? ".acc" : ".ac"), convertToPNG, outputACC, useDiffuse);
+        }
 
         if (writeTextures)
         {
