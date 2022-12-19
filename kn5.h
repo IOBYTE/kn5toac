@@ -218,6 +218,7 @@ private:
         void readMesh(std::istream& stream);
         void readAnimatedMesh(std::istream& stream);
         void transform(const Matrix& matrix);
+        void removeEmptyNodes();
     };
 
     void readTextures(std::istream& stream);
@@ -238,6 +239,7 @@ public:
     void read(const std::string& name);
     void dump(std::ostream& stream) const;
     void transform(const Matrix& matrix);
+    void removeEmptyNodes();
     void writeTextures(const std::string& directory, bool convertToPNG) const;
     void writeAc3d(const std::string& file, bool convertToPNG, bool outputACC, bool useDiffuse) const;
 };

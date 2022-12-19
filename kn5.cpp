@@ -494,8 +494,16 @@ void kn5::Node::transform(const Matrix& xform)
 {
     if (type != Transform)
     {
-        for (auto& vertex : vertices)
-            vertex.transform(xform);
+        if (type == Mesh)
+        {
+            for (auto& vertex : vertices)
+                vertex.transform(xform);
+        }
+        else
+        {
+            for (auto& vertex : anamatedVertices)
+                vertex.transform(xform);
+        }
     }
     else
     {
@@ -505,6 +513,18 @@ void kn5::Node::transform(const Matrix& xform)
 
         for (auto& child : children)
             child.transform(newXform);
+    }
+}
+
+void kn5::Node::removeEmptyNodes()
+{
+    std::vector<Node>::iterator it;
+    for (it = children.begin(); it != children.end(); )
+    {
+        if (it->type == Transform && it->children.size() == 0)
+            it = children.erase(it);
+        else
+            it++;
     }
 }
 
@@ -713,6 +733,11 @@ void kn5::dump(std::ostream& stream) const
 void kn5::transform(const Matrix& matrix)
 {
     node.transform(matrix);
+}
+
+void kn5::removeEmptyNodes()
+{
+    node.removeEmptyNodes();
 }
 
 void kn5::writeAc3d(const std::string& file, bool convertToPNG, bool outputACC, bool useDiffuse) const

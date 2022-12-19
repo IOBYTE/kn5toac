@@ -76,6 +76,7 @@ int main(int argc, char* argv[])
             xform.data[3][3] = 1;
 
             model.transform(xform);
+            model.removeEmptyNodes();
 
             model.writeAc3d(file + (outputACC ? ".acc" : ".ac"), convertToPNG, outputACC, useDiffuse);
         }
