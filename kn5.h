@@ -9,6 +9,18 @@
 class kn5
 {
 private:
+    struct Vec2 : public std::array<float, 2>
+    {
+    };
+
+    struct Vec3 : public std::array<float, 3>
+    {
+    };
+
+    struct Vec4 : public std::array<float, 4>
+    {
+    };
+
     static int32_t readInt32(std::istream& stream);
     static float readFloat(std::istream& stream);
     static uint8_t readUint8(std::istream& stream);
@@ -17,6 +29,9 @@ private:
     static bool readBool(std::istream& stream);
     static std::string readString(std::istream& stream, size_t length);
     static std::string readString(std::istream& stream);
+    static Vec2 readVec2(std::istream& stream);
+    static Vec3 readVec3(std::istream& stream);
+    static Vec4 readVec4(std::istream& stream);
 
     struct Texture
     {
@@ -50,18 +65,6 @@ private:
 
         void read(std::istream& stream);
         void dump(std::ostream& stream, const std::string& indent = "") const;
-    };
-
-    struct Vec2 : public std::array<float, 2>
-    {
-    };
-
-    struct Vec3 : public std::array<float, 3>
-    {
-    };
-
-    struct Vec4 : public std::array<float, 4>
-    {
     };
 
     struct ShaderProperty
@@ -120,7 +123,7 @@ private:
         {
             Vec3    position = { 0, 0, 0 };
             Vec3    normal = { 0, 0, 0 };
-            Vec3    texture = { 0 , 0 };
+            Vec2    texture = { 0 , 0 };
             Vec3    tangent = { 0, 0, 0 };
 
             Vertex() = default;

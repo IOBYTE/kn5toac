@@ -56,6 +56,33 @@ std::string kn5::readString(std::istream& stream, size_t length)
     return string;
 }
 
+kn5::Vec2 kn5::readVec2(std::istream& stream)
+{
+    kn5::Vec2   vec;
+    vec[0] = readFloat(stream);
+    vec[1] = readFloat(stream);
+    return vec;
+}
+
+kn5::Vec3 kn5::readVec3(std::istream& stream)
+{
+    kn5::Vec3   vec;
+    vec[0] = readFloat(stream);
+    vec[1] = readFloat(stream);
+    vec[2] = readFloat(stream);
+    return vec;
+}
+
+kn5::Vec4 kn5::readVec4(std::istream& stream)
+{
+    kn5::Vec4   vec;
+    vec[0] = readFloat(stream);
+    vec[1] = readFloat(stream);
+    vec[2] = readFloat(stream);
+    vec[3] = readFloat(stream);
+    return vec;
+}
+
 std::string kn5::readString(std::istream& stream)
 {
     return readString(stream, readInt32(stream));
@@ -96,15 +123,9 @@ void kn5::ShaderProperty::read(std::istream& stream)
 {
     name = readString(stream);
     value = readFloat(stream);
-    value2[0] = readFloat(stream);
-    value2[1] = readFloat(stream);
-    value3[0] = readFloat(stream);
-    value3[1] = readFloat(stream);
-    value3[2] = readFloat(stream);
-    value4[0] = readFloat(stream);
-    value4[1] = readFloat(stream);
-    value4[2] = readFloat(stream);
-    value4[3] = readFloat(stream);
+    value2 = readVec2(stream);
+    value3 = readVec3(stream);
+    value4 = readVec4(stream);
 }
 
 void kn5::ShaderProperty::dump(std::ostream& stream, const std::string& indent) const
@@ -227,17 +248,10 @@ std::string kn5::Node::to_string(NodeType nodeType)
 
 void kn5::Node::Vertex::read(std::istream& stream)
 {
-    position[0] = readFloat(stream);
-    position[1] = readFloat(stream);
-    position[2] = readFloat(stream);
-    normal[0] = readFloat(stream);
-    normal[1] = readFloat(stream);
-    normal[2] = readFloat(stream);
-    texture[0] = readFloat(stream);
-    texture[1] = readFloat(stream);
-    tangent[0] = readFloat(stream);
-    tangent[1] = readFloat(stream);
-    tangent[2] = readFloat(stream);
+    position = readVec3(stream);
+    normal = readVec3(stream);
+    texture = readVec2(stream);
+    tangent = readVec3(stream);
 }
 
 void kn5::Node::Vertex::dump(std::ostream& stream, const std::string& indent) const
@@ -250,9 +264,7 @@ void kn5::Node::Vertex::dump(std::ostream& stream, const std::string& indent) co
 
 void kn5::Node::BoundingSphere::read(std::istream& stream)
 {
-    center[0] = readFloat(stream);
-    center[1] = readFloat(stream);
-    center[2] = readFloat(stream);
+    center = readVec3(stream);
     radius = readFloat(stream);
 }
 
@@ -318,15 +330,8 @@ void kn5::Node::AnamatedVertex::read(std::istream& stream)
 {
     Vertex::read(stream);
 
-    weights[0] = readFloat(stream);
-    weights[1] = readFloat(stream);
-    weights[2] = readFloat(stream);
-    weights[3] = readFloat(stream);
-
-    indices[0] = readFloat(stream);
-    indices[1] = readFloat(stream);
-    indices[2] = readFloat(stream);
-    indices[3] = readFloat(stream);
+    weights = readVec4(stream);
+    indices = readVec4(stream);
 }
 
 void kn5::Node::AnamatedVertex::dump(std::ostream& stream, const std::string& indent) const
