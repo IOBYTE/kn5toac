@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <set>
 
 class kn5
 {
@@ -239,6 +240,7 @@ public:
     void writeTextures(const std::string& directory, bool convertToPNG) const;
     void writeAc3d(const std::string& file, bool convertToPNG, bool outputACC, bool useDiffuse) const;
     void writeAc3d(const std::string& file, const Node& node, bool convertToPNG, bool outputACC, bool useDiffuse) const;
+    static void getUsedMaterials(const kn5::Node& node, std::set<int>& used);
 };
 
 #endif

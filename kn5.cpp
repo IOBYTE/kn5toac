@@ -414,7 +414,7 @@ void kn5::Node::read(std::istream& stream, Node* parent)
     m_type = static_cast<NodeType>(readInt32(stream));
     m_name = readString(stream);
 
-    const int32_t childCount = readInt32(stream);
+    m_children.resize(readInt32(stream));
 
     m_active = readBool(stream);
 
@@ -431,7 +431,6 @@ void kn5::Node::read(std::istream& stream, Node* parent)
         break;
     }
 
-    m_children.resize(childCount);
     for (auto & child : m_children)
         child.read(stream, this);
 }
@@ -792,12 +791,25 @@ void kn5::writeAc3d(const std::string& file, const Node& node, bool convertToPNG
     }
 }
 
+void kn5::getUsedMaterials(const kn5::Node& node, std::set<int>& used)
+{
+    if (node.m_type != kn5::Node::Transform)
+        used.insert(node.m_materialID);
+
+    for (const auto& child : node.m_children)
+        getUsedMaterials(child, used);
+}
+
 void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node) const
 {
-    // TODO: only write used materials
+    std::set<int>   materialIDs;
 
-    for (const auto& material : m_materials)
+    getUsedMaterials(node, materialIDs);
+
+    for (auto materialID : materialIDs)
     {
+        const kn5::Material& material = m_materials[materialID];
+
         fout << "MATERIAL " << "\"" << material.m_name << "\"";
 
         const ShaderProperty* property = material.findShaderProperty("ksDiffuse");
