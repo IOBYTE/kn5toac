@@ -38,6 +38,7 @@ int main(int argc, char* argv[])
     bool        convertToPNG = true;
     bool        outputACC = false;
     bool        useDiffuse = true;
+    bool        extractCarParts = true;
     std::string textureDirectory("textures");
 
     if (argc != 2)
@@ -101,13 +102,16 @@ int main(int argc, char* argv[])
             xform.m_data[3][2] = 0;
             xform.m_data[3][3] = 1;
 
-            extract(model, "STEER_LR", xform, "steer.acc", false);
-            extract(model, "STEER_HR", xform, "histeer.acc", false);
+            if (extractCarParts)
+            {
+                extract(model, "STEER_LR", xform, "steer.acc", false);
+                extract(model, "STEER_HR", xform, "histeer.acc", false);
 
-            extract(model, "WHEEL_RF", xform, "wheel0.acc", true);
-            extract(model, "WHEEL_LF", xform, "wheel1.acc", true);
-            extract(model, "WHEEL_RR", xform, "wheel2.acc", true);
-            extract(model, "WHEEL_LR", xform, "wheel3.acc", true);
+                extract(model, "WHEEL_RF", xform, "wheel0.acc", true);
+                extract(model, "WHEEL_LF", xform, "wheel1.acc", true);
+                extract(model, "WHEEL_RR", xform, "wheel2.acc", true);
+                extract(model, "WHEEL_LR", xform, "wheel3.acc", true);
+            }
 
             model.transform(xform);
             model.removeEmptyNodes();
