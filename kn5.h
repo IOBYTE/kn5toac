@@ -205,14 +205,7 @@ public:
         std::vector<Node>           m_children;
         Node                        * m_parent = nullptr;
 
-        Node() = default;
-
-        explicit Node(std::istream& stream)
-        {
-            read(stream);
-        }
-
-        void read(std::istream& stream, Node* parent = nullptr);
+        void read(std::istream& stream, Node* parent);
         void dump(std::ostream& stream, const std::string& indent = "") const;
         void readTranslation(std::istream& stream);
         void readMesh(std::istream& stream);
@@ -227,7 +220,7 @@ public:
     void writeAc3dObject(std::ostream& fout, const Node& node, bool convertToPNG, bool outputACC, bool useDiffuse) const;
     void writeAc3dMaterials(std::ostream& fout, const Node& node) const;
 
-    const Node * kn5::findNode(const Node& node, Node::NodeType type, const std::string& name) const;
+    Node * kn5::findNode(Node& node, Node::NodeType type, const std::string& name);
 
     int32_t                 m_version = 0;
     int32_t                 m_unknown = 0;
@@ -242,7 +235,7 @@ public:
     void transform(const Matrix& matrix);
     void transform(Node &node, const Matrix& matrix);
     void removeEmptyNodes();
-    const Node * findNode(Node::NodeType type, const std::string& name) const;
+    Node * findNode(Node::NodeType type, const std::string& name);
     void writeTextures(const std::string& directory, bool convertToPNG) const;
     void writeAc3d(const std::string& file, bool convertToPNG, bool outputACC, bool useDiffuse) const;
     void writeAc3d(const std::string& file, const Node& node, bool convertToPNG, bool outputACC, bool useDiffuse) const;

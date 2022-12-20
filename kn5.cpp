@@ -410,7 +410,7 @@ void kn5::Node::AnamatedVertex::dump(std::ostream& stream, const std::string& in
 
 void kn5::Node::read(std::istream& stream, Node* parent)
 {
-    parent = parent;
+    m_parent = parent;
     m_type = static_cast<NodeType>(readInt32(stream));
     m_name = readString(stream);
 
@@ -431,11 +431,9 @@ void kn5::Node::read(std::istream& stream, Node* parent)
         break;
     }
 
-    for (int i = 0; i < childCount; i++)
-    {
-        m_children.emplace_back(stream);
-        m_children.back().m_parent = this;
-    }
+    m_children.resize(childCount);
+    for (auto & child : m_children)
+        child.read(stream, this);
 }
 
 void kn5::Node::readTranslation(std::istream& stream)
@@ -494,24 +492,24 @@ void kn5::Node::readAnimatedMesh(std::istream& stream)
     m_lodOut = readFloat(stream);
 }
 
-void kn5::Node::transform(const Matrix& xform)
+void kn5::Node::transform(const Matrix& matrix)
 {
     if (m_type != Transform)
     {
         if (m_type == Mesh)
         {
             for (auto& vertex : m_vertices)
-                vertex.transform(xform);
+                vertex.transform(matrix);
         }
         else
         {
             for (auto& vertex : m_anamatedVertices)
-                vertex.transform(xform);
+                vertex.transform(matrix);
         }
     }
     else
     {
-        const Matrix newXform = xform.multiply(m_matrix);
+        const Matrix newXform = matrix.multiply(m_matrix);
 
         m_matrix = Matrix();
 
@@ -525,7 +523,7 @@ void kn5::Node::removeEmptyNodes()
     std::vector<Node>::iterator it;
     for (it = m_children.begin(); it != m_children.end(); )
     {
-        if (it->m_type == Transform && it->m_children.size() == 0)
+        if (it->m_type == Transform && it->m_children.empty())
             it = m_children.erase(it);
         else
             it++;
@@ -627,7 +625,7 @@ void kn5::writeTextures(const std::string& directory, bool convertToPNG) const
 
         texturePath.append(m_textures[i].m_name);
 
-        std::string texture = texturePath.string();
+        const std::string texture = texturePath.string();
 
         if (!std::filesystem::exists(texturePath))
         {
@@ -709,7 +707,7 @@ void kn5::read(const std::string& name)
 
     readMaterials(stream);
 
-    m_node.read(stream);
+    m_node.read(stream, nullptr);
 }
 
 void kn5::dump(std::ostream& stream) const
@@ -749,14 +747,14 @@ void kn5::removeEmptyNodes()
     m_node.removeEmptyNodes();
 }
 
-const kn5::Node* kn5::findNode(const Node &node, Node::NodeType type, const std::string& name) const
+kn5::Node* kn5::findNode(Node &node, Node::NodeType type, const std::string& name)
 {
     if (node.m_type == type && node.m_name == name)
         return &node;
 
-    for (const auto& child : node.m_children)
+    for (auto& child : node.m_children)
     {
-        const Node* found = findNode(child, type, name);
+        Node* found = findNode(child, type, name);
 
         if (found)
             return found;
@@ -765,7 +763,7 @@ const kn5::Node* kn5::findNode(const Node &node, Node::NodeType type, const std:
     return nullptr;
 }
 
-const kn5::Node* kn5::findNode(Node::NodeType type, const std::string& name) const
+kn5::Node* kn5::findNode(Node::NodeType type, const std::string& name)
 {
     return findNode(m_node, type, name);
 }

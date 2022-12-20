@@ -4,9 +4,9 @@
 #include <fstream>
 #include <filesystem>
 
-void extract(const kn5& model, const std::string& name, const kn5::Matrix& xform, const std::string & file, bool wheels)
+void extract(kn5& model, const std::string& name, const kn5::Matrix& xform, const std::string & file, bool wheels)
 {
-    const kn5::Node* transformNode = model.findNode(kn5::Node::Transform, name);
+    kn5::Node* transformNode = model.findNode(kn5::Node::Transform, name);
 
     if (transformNode)
     {
@@ -15,6 +15,18 @@ void extract(const kn5& model, const std::string& name, const kn5::Matrix& xform
         node.transform(xform);
 
         model.writeAc3d(file, node, true, file.find(".acc") != std::string::npos, true);
+
+        if (transformNode->m_parent)
+        {
+            for (std::vector<kn5::Node>::iterator it = transformNode->m_parent->m_children.begin(); it != transformNode->m_parent->m_children.end(); ++it)
+            {
+                if (&(*it) == transformNode)
+                {
+                    transformNode->m_parent->m_children.erase(it);
+                    break;
+                }
+            }
+        }
     }
 }
 
