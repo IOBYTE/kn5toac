@@ -75,6 +75,28 @@ int main(int argc, char* argv[])
             xform.m_data[3][2] = 0;
             xform.m_data[3][3] = 1;
 
+            const kn5::Node* steer_lr = model.findNode(kn5::Node::Transform, "STEER_LR");
+
+            if (steer_lr)
+            {
+                kn5::Node   node = steer_lr->m_children[0];
+
+                node.transform(xform);
+
+                model.writeAc3d("steer.acc", node, true, true, true);
+            }
+
+            const kn5::Node* steer_hr = model.findNode(kn5::Node::Transform, "STEER_HR");
+
+            if (steer_lr)
+            {
+                kn5::Node   node = steer_lr->m_children[0];
+
+                node.transform(xform);
+
+                model.writeAc3d("histeer.acc", node, true, true, true);
+            }
+
             model.transform(xform);
             model.removeEmptyNodes();
 

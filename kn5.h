@@ -28,7 +28,6 @@ public:
         Matrix multiply(const Matrix& matrix) const;
     };
 
-private:
     struct Vec2 : public std::array<float, 2>
     {
     };
@@ -236,12 +235,12 @@ private:
     std::vector<Material>   m_materials;
     Node                    m_node;
 
-public:
     kn5() = default;
 
     void read(const std::string& name);
     void dump(std::ostream& stream) const;
     void transform(const Matrix& matrix);
+    void transform(Node &node, const Matrix& matrix);
     void removeEmptyNodes();
     const Node * findNode(Node::NodeType type, const std::string& name) const;
     void writeTextures(const std::string& directory, bool convertToPNG) const;

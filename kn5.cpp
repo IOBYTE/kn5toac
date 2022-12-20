@@ -739,6 +739,11 @@ void kn5::transform(const Matrix& matrix)
     m_node.transform(matrix);
 }
 
+void kn5::transform(Node &node, const Matrix& matrix)
+{
+    node.transform(matrix);
+}
+
 void kn5::removeEmptyNodes()
 {
     m_node.removeEmptyNodes();
@@ -778,12 +783,12 @@ void kn5::writeAc3d(const std::string& file, const Node& node, bool convertToPNG
     {
         fout << "AC3Db" << std::endl;
 
-        writeAc3dMaterials(fout, m_node);
+        writeAc3dMaterials(fout, node);
 
         fout << "OBJECT world" << std::endl;
         fout << "kids 1" << std::endl;
 
-        writeAc3dObject(fout, m_node, convertToPNG, outputACC, useDiffuse);
+        writeAc3dObject(fout, node, convertToPNG, outputACC, useDiffuse);
 
         fout.close();
     }
@@ -926,7 +931,7 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, bool conver
             fout << vertex.m_position[0] << " " << vertex.m_position[1] << " " << vertex.m_position[2];
 
             if (outputACC)
-                fout << " " << vertex.m_normal[0] << " " << vertex.m_normal[1] << " " << vertex.m_normal[2] << std::endl;
+                fout << " " << vertex.m_normal[0] << " " << vertex.m_normal[1] << " " << vertex.m_normal[2];
 
             fout << std::endl;
         }
