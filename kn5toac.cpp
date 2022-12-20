@@ -4,6 +4,20 @@
 #include <fstream>
 #include <filesystem>
 
+void extract(const kn5& model, const std::string& name, const kn5::Matrix& xform, const std::string & file, bool wheels)
+{
+    const kn5::Node* transformNode = model.findNode(kn5::Node::Transform, name);
+
+    if (transformNode)
+    {
+        kn5::Node   node = wheels ? *transformNode : transformNode->m_children[0];
+
+        node.transform(xform);
+
+        model.writeAc3d(file, node, true, file.find(".acc") != std::string::npos, true);
+    }
+}
+
 int main(int argc, char* argv[])
 {
     bool        writeModel = true;
@@ -75,27 +89,13 @@ int main(int argc, char* argv[])
             xform.m_data[3][2] = 0;
             xform.m_data[3][3] = 1;
 
-            const kn5::Node* steer_lr = model.findNode(kn5::Node::Transform, "STEER_LR");
+            extract(model, "STEER_LR", xform, "steer.acc", false);
+            extract(model, "STEER_HR", xform, "histeer.acc", false);
 
-            if (steer_lr)
-            {
-                kn5::Node   node = steer_lr->m_children[0];
-
-                node.transform(xform);
-
-                model.writeAc3d("steer.acc", node, true, true, true);
-            }
-
-            const kn5::Node* steer_hr = model.findNode(kn5::Node::Transform, "STEER_HR");
-
-            if (steer_lr)
-            {
-                kn5::Node   node = steer_lr->m_children[0];
-
-                node.transform(xform);
-
-                model.writeAc3d("histeer.acc", node, true, true, true);
-            }
+            extract(model, "WHEEL_RF", xform, "wheel0.acc", true);
+            extract(model, "WHEEL_LF", xform, "wheel1.acc", true);
+            extract(model, "WHEEL_RR", xform, "wheel2.acc", true);
+            extract(model, "WHEEL_LR", xform, "wheel3.acc", true);
 
             model.transform(xform);
             model.removeEmptyNodes();
