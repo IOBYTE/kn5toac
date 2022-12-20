@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
     }
     catch (std::runtime_error& e)
     {
-        std::cerr << "Errro reading: " << "car.ini" << " : " << e.what() << std::endl;
+        std::cerr << "Error reading: " << "car.ini" << " : " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
 #endif
@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
     }
     catch (std::runtime_error& e)
     {
-        std::cerr << "Errro reading: " << file << " : " << e.what() << std::endl;
+        std::cerr << "Error reading: " << file << " : " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
 
