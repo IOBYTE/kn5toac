@@ -55,25 +55,25 @@ int main(int argc, char* argv[])
         {
             kn5::Matrix xform;
 
-            xform.data[0][0] = 0;
-            xform.data[0][1] = 0;
-            xform.data[0][2] = -1;
-            xform.data[0][3] = 0;
+            xform.m_data[0][0] = 0;
+            xform.m_data[0][1] = 0;
+            xform.m_data[0][2] = -1;
+            xform.m_data[0][3] = 0;
 
-            xform.data[1][0] = 0;
-            xform.data[1][1] = 1;
-            xform.data[1][2] = 0;
-            xform.data[1][3] = 0;
+            xform.m_data[1][0] = 0;
+            xform.m_data[1][1] = 1;
+            xform.m_data[1][2] = 0;
+            xform.m_data[1][3] = 0;
 
-            xform.data[2][0] = 1;
-            xform.data[2][1] = 0;
-            xform.data[2][2] = 0;
-            xform.data[2][3] = 0;
+            xform.m_data[2][0] = 1;
+            xform.m_data[2][1] = 0;
+            xform.m_data[2][2] = 0;
+            xform.m_data[2][3] = 0;
 
-            xform.data[3][0] = 0;
-            xform.data[3][1] = 0;
-            xform.data[3][2] = 0;
-            xform.data[3][3] = 1;
+            xform.m_data[3][0] = 0;
+            xform.m_data[3][1] = 0;
+            xform.m_data[3][2] = 0;
+            xform.m_data[3][3] = 1;
 
             model.transform(xform);
             model.removeEmptyNodes();

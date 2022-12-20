@@ -11,7 +11,7 @@ class kn5
 public:
     struct Matrix
     {
-        float   data[4][4] =
+        float   m_data[4][4] =
         {
              { 1.0f, 0.0f, 0.0f, 0.0f },
              { 0.0f, 1.0f, 0.0f, 0.0f },
@@ -57,9 +57,9 @@ private:
 
     struct Texture
     {
-        int                 type = 0;
-        std::string         name;
-        std::vector<char>   data;
+        int                 m_type = 0;
+        std::string         m_name;
+        std::vector<char>   m_data;
 
         Texture() = default;
 
@@ -74,9 +74,9 @@ private:
 
     struct TextureMapping
     {
-        std::string name;
-        int32_t     slot = 0;
-        std::string textureName;
+        std::string m_name;
+        int32_t     m_slot = 0;
+        std::string m_textureName;
 
         TextureMapping() = default;
 
@@ -91,11 +91,11 @@ private:
 
     struct ShaderProperty
     {
-        std::string name;
-        float       value = 0;
-        Vec2        value2 = { 0, 0 };
-        Vec3        value3 = { 0, 0, 0 };
-        Vec4        value4 = { 0, 0, 0, 0 };
+        std::string m_name;
+        float       m_value = 0;
+        Vec2        m_value2 = { 0, 0 };
+        Vec3        m_value3 = { 0, 0, 0 };
+        Vec4        m_value4 = { 0, 0, 0, 0 };
 
         ShaderProperty() = default;
 
@@ -118,13 +118,13 @@ private:
 
         static std::string to_string(DepthMode mode);
 
-        std::string                 name;
-        std::string                 shaderName;
-        AlphaBlendMode              alphaBlendMode = Opaque;
-        bool                        alphaTested = false;
-        DepthMode                   depthMode = DepthNormal;
-        std::vector<ShaderProperty> shaderProperties;
-        std::vector<TextureMapping> textureMappings;
+        std::string                 m_name;
+        std::string                 m_shaderName;
+        AlphaBlendMode              m_alphaBlendMode = Opaque;
+        bool                        m_alphaTested = false;
+        DepthMode                   m_depthMode = DepthNormal;
+        std::vector<ShaderProperty> m_shaderProperties;
+        std::vector<TextureMapping> m_textureMappings;
 
         Material() = default;
 
@@ -134,7 +134,7 @@ private:
         }
 
         void read(std::istream& stream);
-        void  dump(std::ostream& stream, const std::string& indent = "") const;
+        void dump(std::ostream& stream, const std::string& indent = "") const;
         const ShaderProperty* findShaderProperty(const std::string& name) const;
         const TextureMapping* findTextureMapping(const std::string& name) const;
     };
@@ -143,10 +143,10 @@ private:
     {
         struct Vertex
         {
-            Vec3    position = { 0, 0, 0 };
-            Vec3    normal = { 0, 0, 0 };
-            Vec2    texture = { 0 , 0 };
-            Vec3    tangent = { 0, 0, 0 };
+            Vec3    m_position = { 0, 0, 0 };
+            Vec3    m_normal = { 0, 0, 0 };
+            Vec2    m_texture = { 0 , 0 };
+            Vec3    m_tangent = { 0, 0, 0 };
 
             Vertex() = default;
             void read(std::istream& stream);
@@ -156,8 +156,8 @@ private:
 
         struct BoundingSphere
         {
-            Vec3    center = { 0, 0, 0 };
-            float   radius = 0;
+            Vec3    m_center = { 0, 0, 0 };
+            float   m_radius = 0;
 
             void read(std::istream& stream);
             void dump(std::ostream& stream, const std::string& indent = "") const;
@@ -165,8 +165,8 @@ private:
 
         struct Bone
         {
-            std::string     name;
-            Matrix          matrix;
+            std::string     m_name;
+            Matrix          m_matrix;
 
             void read(std::istream& stream);
             void dump(std::ostream& stream, const std::string& indent = "") const;
@@ -174,8 +174,8 @@ private:
 
         struct AnamatedVertex : public Vertex
         {
-            Vec4    weights = { 0, 0, 0, 0 };
-            Vec4    indices = { 0, 0, 0, 0 };
+            Vec4    m_weights = { 0, 0, 0, 0 };
+            Vec4    m_indices = { 0, 0, 0, 0 };
 
             AnamatedVertex() = default;
             void read(std::istream& stream);
@@ -186,24 +186,25 @@ private:
 
         static std::string to_string(NodeType nodeType);
 
-        NodeType                    type = NotSet;
-        std::string                 name;
-        bool                        active = false;
-        Matrix                      matrix;
-        bool                        castShadows = false;
-        bool                        visible = false;
-        bool                        transparent = false;
-        std::vector<Bone>           bones;
-        std::vector<Vertex>         vertices;
-        std::vector<AnamatedVertex> anamatedVertices;
-        std::vector<uint16_t>       indices;
-        int                         materialID = 0;
-        uint32_t                    layer = 0;
-        float                       lodIn = 0;
-        float                       lodOut = 0;
-        BoundingSphere              boundingSphere;
-        bool                        renderable = false;
-        std::vector<Node>           children;
+        NodeType                    m_type = NotSet;
+        std::string                 m_name;
+        bool                        m_active = false;
+        Matrix                      m_matrix;
+        bool                        m_castShadows = false;
+        bool                        m_visible = false;
+        bool                        m_transparent = false;
+        std::vector<Bone>           m_bones;
+        std::vector<Vertex>         m_vertices;
+        std::vector<AnamatedVertex> m_anamatedVertices;
+        std::vector<uint16_t>       m_indices;
+        int                         m_materialID = 0;
+        uint32_t                    m_layer = 0;
+        float                       m_lodIn = 0;
+        float                       m_lodOut = 0;
+        BoundingSphere              m_boundingSphere;
+        bool                        m_renderable = false;
+        std::vector<Node>           m_children;
+        Node                        * m_parent = nullptr;
 
         Node() = default;
 
@@ -212,7 +213,7 @@ private:
             read(stream);
         }
 
-        void read(std::istream& stream);
+        void read(std::istream& stream, Node* parent = nullptr);
         void dump(std::ostream& stream, const std::string& indent = "") const;
         void readTranslation(std::istream& stream);
         void readMesh(std::istream& stream);
@@ -227,11 +228,13 @@ private:
     void writeAc3dObject(std::ostream& fout, const Node& node, bool convertToPNG, bool outputACC, bool useDiffuse) const;
     void writeAc3dMaterials(std::ostream& fout, const Node& node) const;
 
-    int32_t                 version = 0;
-    int32_t                 unknown = 0;
-    std::vector<Texture>    textures;
-    std::vector<Material>   materials;
-    Node                    node;
+    const Node * kn5::findNode(const Node& node, Node::NodeType type, const std::string& name) const;
+
+    int32_t                 m_version = 0;
+    int32_t                 m_unknown = 0;
+    std::vector<Texture>    m_textures;
+    std::vector<Material>   m_materials;
+    Node                    m_node;
 
 public:
     kn5() = default;
@@ -240,8 +243,10 @@ public:
     void dump(std::ostream& stream) const;
     void transform(const Matrix& matrix);
     void removeEmptyNodes();
+    const Node * findNode(Node::NodeType type, const std::string& name) const;
     void writeTextures(const std::string& directory, bool convertToPNG) const;
     void writeAc3d(const std::string& file, bool convertToPNG, bool outputACC, bool useDiffuse) const;
+    void writeAc3d(const std::string& file, const Node& node, bool convertToPNG, bool outputACC, bool useDiffuse) const;
 };
 
 #endif
