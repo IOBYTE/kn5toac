@@ -179,6 +179,20 @@ static void writeConfig(const std::string& filename)
         fout << "\t<section name=\"Drivetrain\">" << std::endl;
 //		<attstr name="type" val="RWD"/>
 //		<attnum name="inertia" unit="kg.m2" val="0.0091"/>
+        fout << "\t\t<section name=\"r\">" << std::endl;
+        fout << "\t\t\t<attnum name=\"ratio\" val=\"" << drivetrain.getValue("GEARS", "GEAR_R") << "/>" << std::endl;
+//				<attnum name="inertia" val="0.0037"/>
+//				<attnum name="efficiency" val="0.954"/>
+		fout << "\t\t</section>" << std::endl;
+        size_t gears = std::stoi(drivetrain.getValue("GEARS", "COUNT"));
+        for (size_t i = 0; i < gears; i++)
+        {
+            fout << "\t\t<section name=\"" << (i + 1) << ">" << std::endl;
+            fout << "\t\t\t<attnum name=\"ratio\" val=\"" << drivetrain.getValue("GEARS", "GEAR_" + std::to_string(i + 1)) << "/>" << std::endl;
+//			<attnum name="inertia" val="0.0037"/>
+//			<attnum name="efficiency" val="0.954"/>
+            fout << "\t\t</section>" << std::endl;
+        }
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Steer\">" << std::endl;
