@@ -41,6 +41,7 @@ static void writeConfig(const std::string& filename)
         ini drivetrain("data/drivetrain.ini");
         ini electronics("data/electronics.ini");
         ini engine("data/engine.ini");
+        ini lods("data/lods.ini");
         ini flames("data/flames.ini");
         ini setup("data/setup.ini");
         ini suspensions("data/suspensions.ini");
