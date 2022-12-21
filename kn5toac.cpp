@@ -56,9 +56,35 @@ static void writeConfig(const std::string& filename)
         fout << "<?xml version=\"1.0\"?>" << std::endl;
         fout << "<!DOCTYPE params SYSTEM \"../../../../src/libs/tgf/params.dtd\">" << std::endl;
 
-        fout << "<params name = \"" << car.getValue("INFO", "SCREEN_NAME") << "\" type = \"template\">" << std::endl;
+        fout << "<params name=\"" << car.getValue("INFO", "SCREEN_NAME") << "\" type=\"template\">" << std::endl;
+
+        fout << "\t<section name=\"Bonnet\">" << std::endl;
+//		<attnum name="xpos" val="-0.25" unit="m"/>
+//		<attnum name="ypos" val="0" unit="m"/>
+//		<attnum name="zpos" val="0.95" unit="m"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Driver\">" << std::endl;
+//      <attnum name = "xpos" val = "0.0" unit = "m" / >
+//      <attnum name = "ypos" val = "0" unit = "m" / >
+//      <attnum name = "zpos" val = "0.64" unit = "m" / >
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Sound\">" << std::endl;
+//	    <attstr name="engine sample" val="aichiv10.wav"/>
+//	    <attnum name="rpm	scale" val="0.37"/>
+        fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Graphic Objects\">" << std::endl;
+//	    <attstr name="env" val="formula_k.kn5.ac"/>
+//	    <attstr name="wheel texture"	val="tex-wheel.rgb"/>
+//	    <attstr name="shadow	texture" val="shadow.rgb"/>
+//	    <attstr name="tachometer	texture" val="rpm20000.rgb"/>
+//	    <attnum name="tachometer	min	value" val="0" unit="rpm"/>
+//	    <attnum name="tachometer	max	value" val="20000" unit="rpm"/>
+//	    <attstr name="speedometer texture" val="speed360.rgb"/>
+//	    <attnum name="speedometer min value"	val="0"	unit="km/h"/>
+//	    <attnum name="speedometer max value"	val="360" unit="km/h"/>
         fout << "\t\t<section name=\"Ranges\">" << std::endl;
         fout << "\t\t\t<section name=\"1\">" << std::endl;
         fout << "\t\t\t\t<attnum name=\"threshold\" val=\"0\"/>" << std::endl;
@@ -66,23 +92,272 @@ static void writeConfig(const std::string& filename)
         fout << "\t\t\t\t<attstr name=\"wheels\" val=\"yes\"/>" << std::endl;
         fout << "\t\t\t</section>" << std::endl;
         fout << "\t\t</section>" << std::endl;
+        fout << "\t\t<section name = \"Light\">" << std::endl;
+        fout << "\t\t</section>" << std::endl;
+        fout << "\t\t<section name=\"Steer Wheel\">" << std::endl;
+//	 	<attstr name="model" val="steer.acc"/>
+//	 	<attstr name="hi res model" val="histeer.acc"/>
+//	 	<attnum name="xpos" val="0.4"/>
+//	 	<attnum name="ypos" val="0"/>
+//	 	<attnum name="zpos" val="0.46"/>
+//	 	<attnum name="angle" val="0"/>
+        fout << "\t\t</section>" << std::endl;
+        fout << "\t\t<section name=\"Driver\">" << std::endl;
+        fout << "\t\t</section>" << std::endl;
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Car\">" << std::endl;
-        fout << "\t\t<attstr name=\"category\" val=\"" << "Supercars" << "\"/>" << std::endl;
-        fout << "\t\t<attnum name=\"body length\" unit=\"m\" val=\"" << 4.86 << "\"/>" << std::endl;
-        fout << "\t\t<attnum name=\"body width\" unit=\"m\" val=\"" << 2.00 << "\"/>" << std::endl;
-        fout << "\t\t<attnum name=\"body height\" unit=\"m\" val=\"" << 1.05 << "\"/>" << std::endl;
-        fout << "\t\t<attnum name=\"overall length\" unit=\"m\" val=\"" << 4.86 << "\"/>" << std::endl;
-        fout << "\t\t<attnum name=\"overall width\" unit=\"m\" val=\"" << 2.00 << "\"/>" << std::endl;
+//        fout << "\t\t<attstr name=\"category\" val=\"" << "Supercars" << "\"/>" << std::endl;
+//        fout << "\t\t<attnum name=\"body length\" unit=\"m\" val=\"" << 4.86 << "\"/>" << std::endl;
+//        fout << "\t\t<attnum name=\"body width\" unit=\"m\" val=\"" << 2.00 << "\"/>" << std::endl;
+//        fout << "\t\t<attnum name=\"body height\" unit=\"m\" val=\"" << 1.05 << "\"/>" << std::endl;
+//        fout << "\t\t<attnum name=\"overall length\" unit=\"m\" val=\"" << 4.86 << "\"/>" << std::endl;
+//        fout << "\t\t<attnum name=\"overall width\" unit=\"m\" val=\"" << 2.00 << "\"/>" << std::endl;
         fout << "\t\t<attnum name=\"mass\" unit=\"kg\" val=\"" << car.getValue("BASIC", "TOTALMASS") << "\"/>" << std::endl;
-        fout << "\t\t<attnum name=\"GC height\" unit=\"m\" val=\"" << 0.24 << "\"/>" << std::endl;
-        fout << "\t\t<attnum name=\"front-rear weight repartition\" val=\"" << 0.48 << "\"/>" << std::endl;
-        fout << "\t\t<attnum name=\"front right-left weight repartition\" val=\"" << 0.5 << "\"/>" << std::endl;
-        fout << "\t\t<attnum name=\"rear right-left weight repartition\" val=\"" << 0.5 << "\"/>" << std::endl;
-        fout << "\t\t<attnum name=\"mass repartition coefficient\" val=\"" << 0.8 << "\"/>" << std::endl;
+//        fout << "\t\t<attnum name=\"GC height\" unit=\"m\" val=\"" << 0.24 << "\"/>" << std::endl;
+//        fout << "\t\t<attnum name=\"front-rear weight repartition\" val=\"" << 0.48 << "\"/>" << std::endl;
+//        fout << "\t\t<attnum name=\"front right-left weight repartition\" val=\"" << 0.5 << "\"/>" << std::endl;
+//        fout << "\t\t<attnum name=\"rear right-left weight repartition\" val=\"" << 0.5 << "\"/>" << std::endl;
+//        fout << "\t\t<attnum name=\"mass repartition coefficient\" val=\"" << 0.8 << "\"/>" << std::endl;
         fout << "\t\t<attnum name=\"fuel tank\" unit=\"l\" val=\"" << car.getValue("FUEL", "FUEL") << "\"/>" << std::endl;
         fout << "\t\t<attnum name=\"initial fuel\" unit=\"l\" min=\"1.0\" max=\"" << car.getValue("FUEL", "MAX_FUEL") << "\" val=\"" << car.getValue("FUEL", "FUEL") << "\"/>" << std::endl;
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Exhaust\">" << std::endl;
+//		<attnum name="power" val="1.5"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Aerodynamics\">" << std::endl;
+//		<attnum name="Cx" val="0.347"/>
+//		<attnum name="front area" unit="m2" val="1.97"/>
+//		<attnum name="front Clift" min="0.0" max="1.0" val="0.7"/>
+//		<attnum name="rear Clift" min="0.0" max="1.0" val="0.68"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Front Wing\">" << std::endl;
+//		<attnum name="area" unit="m2" val="0.23"/>
+//		<attnum name="angle" unit="deg" min="0" max="12" val="7"/>
+//		<attnum name="xpos" unit="m" val="2.23"/>
+//		<attnum name="zpos" unit="m" val="0.05"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Rear Wing\">" << std::endl;
+//		<attnum name="area" unit="m2" val="0.68"/>
+//		<attnum name="angle" unit="deg" min="0" max="18" val="13"/>
+//		<attnum name="xpos" unit="m" val="-1.95"/>
+//		<attnum name="zpos" unit="m" val="0.95"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Engine\">" << std::endl;
+//		<attnum name="capacity" unit="l" val="3.6"/>
+//		<attnum name="cylinders" val="6"/>
+//		<attstr name="shape" in="v,l,h,w" val="h"/>
+//		<attstr name="position" in="front,front-mid,mid,rear-mid,rear," val="rear"/>
+//		<attnum name="revs maxi" unit="rpm" min="5000" max="10000" val="9500"/>
+//		<attnum name="revs limiter" unit="rpm" min="5000" max="9000" val="8500"/>
+//		<attnum name="tickover" unit="rpm" min="900" max="3000" val="1500"/>
+//		<attnum name="fuel cons factor" min="1.1" max="1.3" val="1.13"/>
+//		<attstr name="turbo" val="true"/>
+//		<attnum name="turbo rpm" unit="rpm" val="3000"/>
+//		<attnum name="turbo factor" val="1.0"/>
+//		<attnum name="turbo lag" val="1.0"/>
+        fout << "\t\t<section name = \"data points\">" << std::endl;
+        fout << "\t\t</section>" << std::endl;
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Clutch\">" << std::endl;
+//		<attnum name="inertia" unit="kg.m2" val="0.1150"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Gearbox\">" << std::endl;
+//		<attnum name="shift time" unit="s" val="0.15"/>
+        fout << "\t\t<section name = \"gears\">" << std::endl;
+        fout << "\t\t</section>" << std::endl;
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Drivetrain\">" << std::endl;
+//		<attstr name="type" val="RWD"/>
+//		<attnum name="inertia" unit="kg.m2" val="0.0091"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Steer\">" << std::endl;
+//		<attnum name="steer lock" unit="deg" min="1" max="21" val="21"/>
+//		<attnum name="steering wheel rotation" unit="deg" min="5.456741" max="114.591568" val="114.591560"/>
+//		<attnum name="max steer speed" unit="deg/s" min="1" max="360" val="360"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Brake System\">" << std::endl;
+//		<attnum name="front-rear brake repartition" min="0.3" max="0.7" val="0.5"/>
+//		<attnum name="max pressure" unit="kPa" min="100" max="150000" val="25000"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Front Axle\">" << std::endl;
+//		<attnum name="xpos" min="0.5" max="2.5" val="1.22"/>
+//		<attnum name="inertia" unit="kg.m2" val="0.0056"/>
+//		<attnum name="roll center height" unit="m" min="0" max="0.5" val="0.11"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Rear Axle\">" << std::endl;
+//		<attnum name="xpos" min="-2.5" max="-0.5" val="-1.14"/>
+//		<attnum name="inertia" unit="kg.m2" val="0.0080"/>
+//		<attnum name="roll center height" unit="m" min="0" max="0.5" val="0.14"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Front Differential\">" << std::endl;
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Rear Differential\">" << std::endl;
+//		<attstr name="type" in="SPOOL,FREE,LIMITED SLIP" val="LIMITED SLIP"/>
+//		<attnum name="inertia" unit="kg.m2" val="0.0488"/>
+//		<attnum name="ratio" min="0" max="10" val="3.07"/>
+//		<attnum name="efficiency" val="1.0"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Central Differential\">" << std::endl;
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Front Right Wheel\">" << std::endl;
+//      <attnum name = "ypos" unit = "m" val = "-0.83" / >
+//      <attnum name = "rim diameter" unit = "in" min = "16" max = "18" val = "18.0" / >
+//      <attnum name = "tire width" unit = "mm" min = "135" max = "285" val = "255" / >
+//      <attnum name = "tire height-width ratio" min = "0.3" max = "0.8" val = ".40" / >
+//      <attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >
+//      <attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >
+//      <attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >
+//      <attnum name = "camber" min = "-5" max = "0" unit = "deg" val = "-5" / >
+//      <attnum name = "stiffness" val = "27.0" / >
+//      <attnum name = "dynamic friction" unit = "%" val = "80" / >
+//      <attnum name = "rolling resistance" val = "0.02" / >
+//      <attnum name = "mu" min = "0.05" max = "1.6" val = "1.6" / >
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Front Left Wheel\">" << std::endl;
+//      <attnum name = "ypos" unit = "m" val = "-0.83" / >
+//      <attnum name = "rim diameter" unit = "in" min = "16" max = "18" val = "18.0" / >
+//      <attnum name = "tire width" unit = "mm" min = "135" max = "285" val = "255" / >
+//      <attnum name = "tire height-width ratio" min = "0.3" max = "0.8" val = ".40" / >
+//      <attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >
+//      <attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >
+//      <attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >
+//      <attnum name = "camber" min = "-5" max = "0" unit = "deg" val = "-5" / >
+//      <attnum name = "stiffness" val = "27.0" / >
+//      <attnum name = "dynamic friction" unit = "%" val = "80" / >
+//      <attnum name = "rolling resistance" val = "0.02" / >
+//      <attnum name = "mu" min = "0.05" max = "1.6" val = "1.6" / >
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Rear Right Wheel\">" << std::endl;
+//      <attnum name = "ypos" unit = "m" val = "-0.83" / >
+//      <attnum name = "rim diameter" unit = "in" min = "16" max = "18" val = "18.0" / >
+//      <attnum name = "tire width" unit = "mm" min = "135" max = "285" val = "255" / >
+//      <attnum name = "tire height-width ratio" min = "0.3" max = "0.8" val = ".40" / >
+//      <attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >
+//      <attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >
+//      <attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >
+//      <attnum name = "camber" min = "-5" max = "0" unit = "deg" val = "-5" / >
+//      <attnum name = "stiffness" val = "27.0" / >
+//      <attnum name = "dynamic friction" unit = "%" val = "80" / >
+//      <attnum name = "rolling resistance" val = "0.02" / >
+//      <attnum name = "mu" min = "0.05" max = "1.6" val = "1.6" / >
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Rear Left Wheel\">" << std::endl;
+//      <attnum name = "ypos" unit = "m" val = "-0.83" / >
+//      <attnum name = "rim diameter" unit = "in" min = "16" max = "18" val = "18.0" / >
+//      <attnum name = "tire width" unit = "mm" min = "135" max = "285" val = "255" / >
+//      <attnum name = "tire height-width ratio" min = "0.3" max = "0.8" val = ".40" / >
+//      <attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >
+//      <attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >
+//      <attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >
+//      <attnum name = "camber" min = "-5" max = "0" unit = "deg" val = "-5" / >
+//      <attnum name = "stiffness" val = "27.0" / >
+//      <attnum name = "dynamic friction" unit = "%" val = "80" / >
+//      <attnum name = "rolling resistance" val = "0.02" / >
+//      <attnum name = "mu" min = "0.05" max = "1.6" val = "1.6" / >
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Front Anti-Roll Bar\">" << std::endl;
+//		<attnum name="spring" unit="lbs/in" min="0" max="5000" val="0"/>
+//		<attnum name="suspension course" unit="m" min="0" max="0.2" val="0.2"/>
+//		<attnum name="bellcrank" min="1" max="5" val="2.5"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Rear Anti-Roll Bar\">" << std::endl;
+//		<attnum name="spring" unit="lbs/in" min="0" max="5000" val="0"/>
+//		<attnum name="suspension course" unit="m" min="0" max="0.2" val="0.2"/>
+//		<attnum name="bellcrank" min="1" max="5" val="2.5"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Front Right Suspension\">" << std::endl;
+//		<attnum name="spring" unit="lbs/in" min="0" max="10000" val="5500"/>
+//		<attnum name="suspension course" unit="m" min="0" max="0.25" val="0.07"/>
+//		<attnum name="bellcrank" min="0.1" max="5" val="0.9"/>
+//		<attnum name="packers" unit="mm" min="0" max="20" val="10"/>
+//		<attnum name="slow bump" unit="lbs/in/s" min="0" max="1000" val="500"/>
+//		<attnum name="slow rebound" unit="lbs/in/s" min="0" max="1000" val="300"/>
+//		<attnum name="fast bump" unit="lbs/in/s" min="0" max="1000" val="60"/>
+//		<attnum name="fast rebound" unit="lbs/in/s" min="0" max="1000" val="60"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Front Left Suspension\">" << std::endl;
+//		<attnum name="spring" unit="lbs/in" min="0" max="10000" val="5500"/>
+//		<attnum name="suspension course" unit="m" min="0" max="0.25" val="0.07"/>
+//		<attnum name="bellcrank" min="0.1" max="5" val="0.9"/>
+//		<attnum name="packers" unit="mm" min="0" max="20" val="10"/>
+//		<attnum name="slow bump" unit="lbs/in/s" min="0" max="1000" val="500"/>
+//		<attnum name="slow rebound" unit="lbs/in/s" min="0" max="1000" val="300"/>
+//		<attnum name="fast bump" unit="lbs/in/s" min="0" max="1000" val="60"/>
+//		<attnum name="fast rebound" unit="lbs/in/s" min="0" max="1000" val="60"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Rear Right Suspension\">" << std::endl;
+//		<attnum name="spring" unit="lbs/in" min="0" max="10000" val="5500"/>
+//		<attnum name="suspension course" unit="m" min="0" max="0.25" val="0.07"/>
+//		<attnum name="bellcrank" min="0.1" max="5" val="0.9"/>
+//		<attnum name="packers" unit="mm" min="0" max="20" val="10"/>
+//		<attnum name="slow bump" unit="lbs/in/s" min="0" max="1000" val="500"/>
+//		<attnum name="slow rebound" unit="lbs/in/s" min="0" max="1000" val="300"/>
+//		<attnum name="fast bump" unit="lbs/in/s" min="0" max="1000" val="60"/>
+//		<attnum name="fast rebound" unit="lbs/in/s" min="0" max="1000" val="60"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Rear Left Suspension\">" << std::endl;
+//		<attnum name="spring" unit="lbs/in" min="0" max="10000" val="5500"/>
+//		<attnum name="suspension course" unit="m" min="0" max="0.25" val="0.07"/>
+//		<attnum name="bellcrank" min="0.1" max="5" val="0.9"/>
+//		<attnum name="packers" unit="mm" min="0" max="20" val="10"/>
+//		<attnum name="slow bump" unit="lbs/in/s" min="0" max="1000" val="500"/>
+//		<attnum name="slow rebound" unit="lbs/in/s" min="0" max="1000" val="300"/>
+//		<attnum name="fast bump" unit="lbs/in/s" min="0" max="1000" val="60"/>
+//		<attnum name="fast rebound" unit="lbs/in/s" min="0" max="1000" val="60"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Front Right Brake\">" << std::endl;
+//		<attnum name="disk diameter" unit="mm" min="100" max="380" val="380"/>
+//		<attnum name="piston area" unit="cm2" val="50"/>
+//		<attnum name="mu" val="0.45"/>
+//		<attnum name="inertia" unit="kg.m2" val="0.1241"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Front Left Brake\">" << std::endl;
+//		<attnum name="disk diameter" unit="mm" min="100" max="380" val="380"/>
+//		<attnum name="piston area" unit="cm2" val="50"/>
+//		<attnum name="mu" val="0.45"/>
+//		<attnum name="inertia" unit="kg.m2" val="0.1241"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Rear Right Brake\">" << std::endl;
+//		<attnum name="disk diameter" unit="mm" min="100" max="380" val="380"/>
+//		<attnum name="piston area" unit="cm2" val="50"/>
+//		<attnum name="mu" val="0.45"/>
+//		<attnum name="inertia" unit="kg.m2" val="0.1241"/>
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Rear Left Brake\">" << std::endl;
+//		<attnum name="disk diameter" unit="mm" min="100" max="380" val="380"/>
+//		<attnum name="piston area" unit="cm2" val="50"/>
+//		<attnum name="mu" val="0.45"/>
+//		<attnum name="inertia" unit="kg.m2" val="0.1241"/>
         fout << "\t</section>" << std::endl;
 
         fout << "</params>" << std::endl;

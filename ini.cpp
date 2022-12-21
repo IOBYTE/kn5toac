@@ -42,7 +42,8 @@ void ini::read(const std::string& fileName)
         if (trimmed.empty())
             continue;
 
-        if (trimmed[0] == ';' || trimmed[0] == '/')
+        // comment
+        if (trimmed[0] == ';' || trimmed[0] == '#' || trimmed[0] == '/')
             continue;
 
         if (trimmed[0] == '[')
