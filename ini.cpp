@@ -104,3 +104,13 @@ std::string ini::getValue(const std::string& section, const std::string& key) co
 
     return value;
 }
+
+int ini::getIntValue(const std::string& section, const std::string& key) const
+{
+    return std::stoi(getValue(section, key));
+}
+
+float ini::getFloatValue(const std::string& section, const std::string& key) const
+{
+    return std::stof(getValue(section, key));
+}

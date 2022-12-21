@@ -19,6 +19,8 @@ public:
     void read(const std::string& fileName);
     void dump() const;
     std::string getValue(const std::string& section, const std::string& key) const;
+    int getIntValue(const std::string& section, const std::string& key) const;
+    float getFloatValue(const std::string& section, const std::string& key) const;
 };
 
 #endif
