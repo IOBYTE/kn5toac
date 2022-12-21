@@ -180,7 +180,7 @@ static void writeConfig(const std::string& filename)
 //		<attstr name="type" val="RWD"/>
 //		<attnum name="inertia" unit="kg.m2" val="0.0091"/>
         fout << "\t\t<section name=\"r\">" << std::endl;
-        fout << "\t\t\t<attnum name=\"ratio\" val=\"" << drivetrain.getValue("GEARS", "GEAR_R") << "/>" << std::endl;
+        fout << "\t\t\t<attnum name=\"ratio\" val=\"" << drivetrain.getValue("GEARS", "GEAR_R") << "\"/>" << std::endl;
 //				<attnum name="inertia" val="0.0037"/>
 //				<attnum name="efficiency" val="0.954"/>
 		fout << "\t\t</section>" << std::endl;
@@ -188,7 +188,7 @@ static void writeConfig(const std::string& filename)
         for (size_t i = 0; i < gears; i++)
         {
             fout << "\t\t<section name=\"" << (i + 1) << ">" << std::endl;
-            fout << "\t\t\t<attnum name=\"ratio\" val=\"" << drivetrain.getValue("GEARS", "GEAR_" + std::to_string(i + 1)) << "/>" << std::endl;
+            fout << "\t\t\t<attnum name=\"ratio\" val=\"" << drivetrain.getValue("GEARS", "GEAR_" + std::to_string(i + 1)) << "\"/>" << std::endl;
 //			<attnum name="inertia" val="0.0037"/>
 //			<attnum name="efficiency" val="0.954"/>
             fout << "\t\t</section>" << std::endl;
@@ -202,12 +202,15 @@ static void writeConfig(const std::string& filename)
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Brake System\">" << std::endl;
-//		<attnum name="front-rear brake repartition" min="0.3" max="0.7" val="0.5"/>
+        if (std::stoi(brakes.getValue("DATA", "COCKPIT_ADJUSTABLE")) == 1)
+		    fout << "\t\t<attnum name=\"front-rear brake repartition\" min=\"0.3\" max=\"0.7\" val=\"" << brakes.getValue("DATA", "FRONT_SHARE") << "\"/>" << std::endl;
+        else
+            fout << "\t\t<attnum name=\"front-rear brake repartition\" val=\"" << brakes.getValue("DATA", "FRONT_SHARE") << "\"/>" << std::endl;
 //		<attnum name="max pressure" unit="kPa" min="100" max="150000" val="25000"/>
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Front Axle\">" << std::endl;
-//		<attnum name="xpos" min="0.5" max="2.5" val="1.22"/>
+//		fout << "\t\t<attnum name=\"xpos\" min=\"0.5\" max=\"2.5\" val=\"" << 1.22 "\"/>" << std::endl;
 //		<attnum name="inertia" unit="kg.m2" val="0.0056"/>
 //		<attnum name="roll center height" unit="m" min="0" max="0.5" val="0.11"/>
         fout << "\t</section>" << std::endl;
@@ -292,15 +295,11 @@ static void writeConfig(const std::string& filename)
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Front Anti-Roll Bar\">" << std::endl;
-//		<attnum name="spring" unit="lbs/in" min="0" max="5000" val="0"/>
-//		<attnum name="suspension course" unit="m" min="0" max="0.2" val="0.2"/>
-//		<attnum name="bellcrank" min="1" max="5" val="2.5"/>
+        fout << "\t\t<attnum name=\"spring\" unit=\"N/m\" min=\"0\" max=\"50000\" val=\"" << suspensions.getValue("ARB", "FRONT") << "\"/>" << std::endl;
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Rear Anti-Roll Bar\">" << std::endl;
-//		<attnum name="spring" unit="lbs/in" min="0" max="5000" val="0"/>
-//		<attnum name="suspension course" unit="m" min="0" max="0.2" val="0.2"/>
-//		<attnum name="bellcrank" min="1" max="5" val="2.5"/>
+        fout << "\t\t<attnum name=\"spring\" unit=\"N/m\" min=\"0\" max=\"50000\" val=\"" << suspensions.getValue("ARB", "REAR") << "\"/>" << std::endl;
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Front Right Suspension\">" << std::endl;
