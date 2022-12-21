@@ -38,9 +38,12 @@ static void writeConfig(const std::string& filename)
         ini brakes("data/brakes.ini");
         ini car("data/car.ini");
         ini colliders("data/colliders.ini");
+        ini drivetrain("data/drivetrain.ini");
+        ini electronics("data/electronics.ini");
         ini engine("data/engine.ini");
         ini flames("data/flames.ini");
         ini setup("data/setup.ini");
+        ini suspensions("data/suspensions.ini");
         ini tires("data/tyres.ini");
 
         std::string modelFileName = "formula_k.kn5.ac";
@@ -179,7 +182,7 @@ int main(int argc, char* argv[])
 
         if (writeCarConfig)
         {
-            writeConfig("car.xml");
+            writeConfig("formula_k.xml");
         }
     }
     catch (std::ifstream::failure& e)
