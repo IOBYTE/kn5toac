@@ -194,7 +194,7 @@ static void writeConfig(const std::string& filename)
         std::string traction = drivetrain.getValue("TRACTION", "TYPE");
         if (traction == "AWD")
             traction = "4WD";
-		fout << "\t<attstr name=\"type\" val=\"" << traction << "\"/>" << std::endl;
+		fout << "\t\t<attstr name=\"type\" val=\"" << traction << "\"/>" << std::endl;
 //		<attnum name="inertia" unit="kg.m2" val="0.0091"/>
         fout << "\t</section>" << std::endl;
 

@@ -218,8 +218,10 @@ public:
     void readTextures(std::istream& stream);
     void readMaterials(std::istream& stream);
 
-    void writeAc3dObject(std::ostream& fout, const Node& node, bool convertToPNG, bool outputACC, bool useDiffuse) const;
-    void writeAc3dMaterials(std::ostream& fout, const Node& node) const;
+    void writeAc3dObject(std::ostream& fout, const Node& node, const std::set<int>& usedMaterialIDs, bool convertToPNG, bool outputACC, bool useDiffuse) const;
+    void writeAc3dMaterials(std::ostream& fout, const Node& node, const std::set<int> & usedMaterialIDs) const;
+    void getUsedMaterials(const kn5::Node& node, std::set<int>& used) const;
+    int getNewMaterialID(int materialID, const std::set<int>& usedMaterialIDs) const;
 
     Node * kn5::findNode(Node& node, Node::NodeType type, const std::string& name);
 
@@ -240,7 +242,6 @@ public:
     void writeTextures(const std::string& directory, bool convertToPNG) const;
     void writeAc3d(const std::string& file, bool convertToPNG, bool outputACC, bool useDiffuse) const;
     void writeAc3d(const std::string& file, const Node& node, bool convertToPNG, bool outputACC, bool useDiffuse) const;
-    static void getUsedMaterials(const kn5::Node& node, std::set<int>& used);
 };
 
 #endif

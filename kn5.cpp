@@ -774,39 +774,53 @@ void kn5::writeAc3d(const std::string& file, bool convertToPNG, bool outputACC, 
 
 void kn5::writeAc3d(const std::string& file, const Node& node, bool convertToPNG, bool outputACC, bool useDiffuse) const
 {
+    std::set<int>   usedMaterialIDs;
+
+    getUsedMaterials(node, usedMaterialIDs);
+
     std::ofstream fout(file);
 
     if (fout)
     {
         fout << "AC3Db" << std::endl;
 
-        writeAc3dMaterials(fout, node);
+        writeAc3dMaterials(fout, node, usedMaterialIDs);
 
         fout << "OBJECT world" << std::endl;
         fout << "kids 1" << std::endl;
 
-        writeAc3dObject(fout, node, convertToPNG, outputACC, useDiffuse);
+        writeAc3dObject(fout, node, usedMaterialIDs, convertToPNG, outputACC, useDiffuse);
 
         fout.close();
     }
 }
 
-void kn5::getUsedMaterials(const kn5::Node& node, std::set<int>& used)
+void kn5::getUsedMaterials(const kn5::Node& node, std::set<int>& usedMaterialIDs) const
 {
     if (node.m_type != kn5::Node::Transform)
-        used.insert(node.m_materialID);
+        usedMaterialIDs.insert(node.m_materialID);
 
     for (const auto& child : node.m_children)
-        getUsedMaterials(child, used);
+        getUsedMaterials(child, usedMaterialIDs);
 }
 
-void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node) const
+int kn5::getNewMaterialID(int materialID, const std::set<int>& usedMaterialIDs) const
 {
-    std::set<int>   materialIDs;
+    int newMaterialID = 0;
 
-    getUsedMaterials(node, materialIDs);
+    for (auto id : usedMaterialIDs)
+    {
+        if (id == materialID)
+            return newMaterialID;
 
-    for (auto materialID : materialIDs)
+        newMaterialID++;
+    }
+    return 0;
+}
+
+void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node, const std::set<int>& usedMaterialIDs) const
+{
+    for (auto materialID : usedMaterialIDs)
     {
         const kn5::Material& material = m_materials[materialID];
 
@@ -877,7 +891,7 @@ void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node) const
     }
 }
 
-void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, bool convertToPNG, bool outputACC, bool useDiffuse) const
+void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, const std::set<int>& usedMaterialIDs, bool convertToPNG, bool outputACC, bool useDiffuse) const
 {
     if (node.m_type == Node::Transform)
     {
@@ -979,7 +993,7 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, bool conver
         for (size_t i = 0; i < node.m_indices.size(); i += 3)
         {
             fout << "SURF 0x10" << std::endl;
-            fout << "mat " << node.m_materialID << std::endl;
+            fout << "mat " << getNewMaterialID(node.m_materialID, usedMaterialIDs) << std::endl;
             fout << "refs 3" << std::endl;
             for (size_t j = 0; j < 3; j++)
             {
@@ -997,5 +1011,5 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, bool conver
     fout << "kids " << node.m_children.size() << std::endl;
 
     for (const auto& child : node.m_children)
-        writeAc3dObject(fout, child, convertToPNG, outputACC, useDiffuse);
+        writeAc3dObject(fout, child, usedMaterialIDs, convertToPNG, outputACC, useDiffuse);
 }
