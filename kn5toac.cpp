@@ -96,8 +96,8 @@ static void writeConfig(const std::string& filename)
         fout << "\t\t<section name = \"Light\">" << std::endl;
         fout << "\t\t</section>" << std::endl;
         fout << "\t\t<section name=\"Steer Wheel\">" << std::endl;
-//	 	<attstr name="model" val="steer.acc"/>
-//	 	<attstr name="hi res model" val="histeer.acc"/>
+        fout << "\t\t\t<attstr name=\"model\" val=\"steer.acc\"/>" << std::endl;
+        fout << "\t\t\t<attstr name=\"hi res model\" val=\"histeer.acc\"/>" << std::endl;
 //	 	<attnum name="xpos" val="0.4"/>
 //	 	<attnum name="ypos" val="0"/>
 //	 	<attnum name="zpos" val="0.46"/>
