@@ -11,6 +11,10 @@ private:
 
 public:
     ini() = default;
+    ini(const std::string& fileName)
+    {
+        read(fileName);
+    }
 
     void read(const std::string& fileName);
     void dump() const;

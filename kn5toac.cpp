@@ -4,7 +4,7 @@
 #include <fstream>
 #include <filesystem>
 
-void extract(kn5& model, const std::string& name, const kn5::Matrix& xform, const std::string & file, bool wheels)
+static void extract(kn5& model, const std::string& name, const kn5::Matrix& xform, const std::string & file, bool wheels)
 {
     kn5::Node* transformNode = model.findNode(kn5::Node::Transform, name);
 
@@ -30,6 +30,68 @@ void extract(kn5& model, const std::string& name, const kn5::Matrix& xform, cons
     }
 }
 
+static void writeConfig(const std::string& filename)
+{
+    try
+    {
+        ini aero("data/aero.ini");
+        ini brakes("data/brakes.ini");
+        ini car("data/car.ini");
+        ini colliders("data/colliders.ini");
+        ini engine("data/engine.ini");
+        ini flames("data/flames.ini");
+        ini setup("data/setup.ini");
+        ini tires("data/tyres.ini");
+
+        std::string modelFileName = "formula_k.kn5.ac";
+
+        std::ofstream   fout(filename);
+
+        if (!fout)
+            throw std::runtime_error("Couldn't create: " + filename);
+
+        fout << "<?xml version=\"1.0\"?>" << std::endl;
+        fout << "<!DOCTYPE params SYSTEM \"../../../../src/libs/tgf/params.dtd\">" << std::endl;
+
+        fout << "<params name = \"" << car.getValue("INFO", "SCREEN_NAME") << "\" type = \"template\">" << std::endl;
+
+        fout << "\t<section name=\"Graphic Objects\">" << std::endl;
+        fout << "\t\t<section name=\"Ranges\">" << std::endl;
+        fout << "\t\t\t<section name=\"1\">" << std::endl;
+        fout << "\t\t\t\t<attnum name=\"threshold\" val=\"0\"/>" << std::endl;
+        fout << "\t\t\t\t<attstr name=\"car\" val=\"" << modelFileName << "\"/>" << std::endl;
+        fout << "\t\t\t\t<attstr name=\"wheels\" val=\"yes\"/>" << std::endl;
+        fout << "\t\t\t</section>" << std::endl;
+        fout << "\t\t</section>" << std::endl;
+        fout << "\t</section>" << std::endl;
+
+        fout << "\t<section name=\"Car\">" << std::endl;
+        fout << "\t\t<attstr name=\"category\" val=\"" << "Supercars" << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"body length\" unit=\"m\" val=\"" << 4.86 << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"body width\" unit=\"m\" val=\"" << 2.00 << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"body height\" unit=\"m\" val=\"" << 1.05 << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"overall length\" unit=\"m\" val=\"" << 4.86 << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"overall width\" unit=\"m\" val=\"" << 2.00 << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"mass\" unit=\"kg\" val=\"" << car.getValue("BASIC", "TOTALMASS") << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"GC height\" unit=\"m\" val=\"" << 0.24 << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"front-rear weight repartition\" val=\"" << 0.48 << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"front right-left weight repartition\" val=\"" << 0.5 << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"rear right-left weight repartition\" val=\"" << 0.5 << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"mass repartition coefficient\" val=\"" << 0.8 << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"fuel tank\" unit=\"l\" val=\"" << car.getValue("FUEL", "FUEL") << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"initial fuel\" unit=\"l\" min=\"1.0\" max=\"" << car.getValue("FUEL", "MAX_FUEL") << "\" val=\"" << car.getValue("FUEL", "FUEL") << "\"/>" << std::endl;
+        fout << "\t</section>" << std::endl;
+
+        fout << "</params>" << std::endl;
+
+        fout.close();
+    }
+    catch (std::runtime_error& e)
+    {
+        std::cerr << "Error : " << e.what() << std::endl;
+    }
+}
+
 int main(int argc, char* argv[])
 {
     bool        writeModel = true;
@@ -39,6 +101,7 @@ int main(int argc, char* argv[])
     bool        outputACC = false;
     bool        useDiffuse = true;
     bool        extractCarParts = true;
+    bool        writeCarConfig = true;
     std::string textureDirectory("textures");
 
     if (argc != 2)
@@ -46,21 +109,6 @@ int main(int argc, char* argv[])
         std::cerr << "Usage: kn5 file.kn5" << std::endl;
         return EXIT_FAILURE;
     }
-
-#if 0
-    try
-    {
-        ini in;
-
-        in.read("car.ini");
-        in.dump();
-    }
-    catch (std::runtime_error& e)
-    {
-        std::cerr << "Error reading: " << "car.ini" << " : " << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-#endif
 
     kn5 model;
 
@@ -127,6 +175,11 @@ int main(int argc, char* argv[])
                 directory.append(textureDirectory);
 
             model.writeTextures(directory.string(), convertToPNG);
+        }
+
+        if (writeCarConfig)
+        {
+            writeConfig("car.xml");
         }
     }
     catch (std::ifstream::failure& e)

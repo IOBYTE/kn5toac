@@ -27,19 +27,22 @@ void ini::read(const std::string& fileName)
     std::ifstream stream(fileName, std::ios::binary);
 
     if (!stream)
-        throw std::runtime_error("Couldn't open file");
+        throw std::runtime_error("Couldn't open file: " + fileName);
 
     char        line[256];
+    size_t      lineNumber = 0;
     std::string currentSection;
 
     while (stream.getline(line, sizeof(line)))
     {
+        lineNumber++;
+
         std::string trimmed = trim(line);
 
         if (trimmed.empty())
             continue;
 
-        if (trimmed[0] == ';')
+        if (trimmed[0] == ';' || trimmed[0] == '/')
             continue;
 
         if (trimmed[0] == '[')
@@ -56,14 +59,19 @@ void ini::read(const std::string& fileName)
             const size_t equal = trimmed.find_first_of('=');
 
             if (equal == std::string::npos)
-                throw std::runtime_error("Couldn't parse file");
+                throw std::runtime_error("Couldn't parse file: " + fileName + " line : " + std::to_string(lineNumber));
 
             const std::string key = rtrim(trimmed.substr(0, equal));
-            const std::string value = ltrim(trimmed.substr(equal + 1));
+            std::string value = ltrim(trimmed.substr(equal + 1));
+            size_t comment = value.find(';');
+            if (comment != std::string::npos)
+                value = rtrim(value.substr(0, comment));
 
             sections[currentSection].insert(std::pair(key, value));
         }
     }
+
+    stream.close();
 }
 
 void ini::dump() const
