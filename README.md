@@ -18,7 +18,7 @@ The converted Speed Dreams .acc files do not have multiple textures and triangle
 
 I think it's time to try generating a car xml config file from the kn5, ini and lut files.
 
-The wheels can't be used without modifications.  The brake disks can't be used because they are created by speed Dreams.  Reusing these unmodified from the original model will require writing a kn5 loader for osg and ssg.
+The wheels can't be used without modifications.  The brake disks can't be used because they are created by Speed Dreams.  Reusing these unmodified from the original model will require writing a kn5 loader for osg and ssg.
 
 Build with CMake on Windows
 ---------------------------
