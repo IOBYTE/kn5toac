@@ -4,13 +4,13 @@
 #include <fstream>
 #include <filesystem>
 
-static void extract(kn5& model, const std::string& name, const kn5::Matrix& xform, const std::string & file, bool wheels)
+static void extract(kn5& model, const std::string& name, const kn5::Matrix& xform, const std::string & file)
 {
     kn5::Node* transformNode = model.findNode(kn5::Node::Transform, name);
 
     if (transformNode)
     {
-        kn5::Node   node = wheels ? *transformNode : transformNode->m_children[0];
+        kn5::Node   node = transformNode->m_children[0];
 
         node.transform(xform);
 
@@ -23,6 +23,26 @@ static void extract(kn5& model, const std::string& name, const kn5::Matrix& xfor
                 if (&(*it) == transformNode)
                 {
                     transformNode->m_parent->m_children.erase(it);
+                    break;
+                }
+            }
+        }
+    }
+}
+
+static void remove(kn5& model, const std::string& name)
+{
+    kn5::Node* node = model.findNode(kn5::Node::Transform, name);
+
+    if (node)
+    {
+        if (node->m_parent)
+        {
+            for (std::vector<kn5::Node>::iterator it = node->m_parent->m_children.begin(); it != node->m_parent->m_children.end(); ++it)
+            {
+                if (&(*it) == node)
+                {
+                    node->m_parent->m_children.erase(it);
                     break;
                 }
             }
@@ -90,7 +110,7 @@ static void writeConfig(const std::string& filename)
         fout << "\t\t\t<section name=\"1\">" << std::endl;
         fout << "\t\t\t\t<attnum name=\"threshold\" val=\"0\"/>" << std::endl;
         fout << "\t\t\t\t<attstr name=\"car\" val=\"" << modelFileName << "\"/>" << std::endl;
-        fout << "\t\t\t\t<attstr name=\"wheels\" val=\"yes\"/>" << std::endl;
+//        fout << "\t\t\t\t<attstr name=\"wheels\" val=\"yes\"/>" << std::endl;
         fout << "\t\t\t</section>" << std::endl;
         fout << "\t\t</section>" << std::endl;
         fout << "\t\t<section name = \"Light\">" << std::endl;
@@ -175,16 +195,16 @@ static void writeConfig(const std::string& filename)
         fout << "\t\t<section name = \"gears\">" << std::endl;
         fout << "\t\t\t<section name=\"r\">" << std::endl;
         fout << "\t\t\t\t<attnum name=\"ratio\" val=\"" << drivetrain.getValue("GEARS", "GEAR_R") << "\"/>" << std::endl;
-        //				<attnum name="inertia" val="0.0037"/>
-        //				<attnum name="efficiency" val="0.954"/>
+//		<attnum name="inertia" val="0.0037"/>
+//		<attnum name="efficiency" val="0.954"/>
         fout << "\t\t\t</section>" << std::endl;
         size_t gears = drivetrain.getIntValue("GEARS", "COUNT");
         for (size_t i = 0; i < gears; i++)
         {
             fout << "\t\t\t<section name=\"" << (i + 1) << "\">" << std::endl;
             fout << "\t\t\t\t<attnum name=\"ratio\" val=\"" << drivetrain.getValue("GEARS", "GEAR_" + std::to_string(i + 1)) << "\"/>" << std::endl;
-            //			<attnum name="inertia" val="0.0037"/>
-            //			<attnum name="efficiency" val="0.954"/>
+//			<attnum name="inertia" val="0.0037"/>
+//			<attnum name="efficiency" val="0.954"/>
             fout << "\t\t\t</section>" << std::endl;
         }
         fout << "\t\t</section>" << std::endl;
@@ -219,7 +239,7 @@ static void writeConfig(const std::string& filename)
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Rear Axle\">" << std::endl;
-//		<attnum name="xpos" min="-2.5" max="-0.5" val="-1.14"/>
+//		fout << "\t\t<attnum name=\"xpos\" min=\"-2.5\" max=\"-0.5\" val=\"" << -1.14 << "\"/>" << std::endl;
 //		<attnum name="inertia" unit="kg.m2" val="0.0080"/>
 //		<attnum name="roll center height" unit="m" min="0" max="0.5" val="0.14"/>
         fout << "\t</section>" << std::endl;
@@ -238,25 +258,25 @@ static void writeConfig(const std::string& filename)
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Front Right Wheel\">" << std::endl;
-//      <attnum name = "ypos" unit = "m" val = "-0.83" / >
-//      <attnum name = "rim diameter" unit = "in" min = "16" max = "18" val = "18.0" / >
-//      <attnum name = "tire width" unit = "mm" min = "135" max = "285" val = "255" / >
-//      <attnum name = "tire height-width ratio" min = "0.3" max = "0.8" val = ".40" / >
-//      <attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >
-//      <attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >
-//      <attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >
-//      <attnum name = "camber" min = "-5" max = "0" unit = "deg" val = "-5" / >
-//      <attnum name = "stiffness" val = "27.0" / >
-//      <attnum name = "dynamic friction" unit = "%" val = "80" / >
-//      <attnum name = "rolling resistance" val = "0.02" / >
-//      <attnum name = "mu" min = "0.05" max = "1.6" val = "1.6" / >
+//      fout << "\t\t<attnum name = "ypos" unit = "m" val = "-0.83" / >" << std::endl;
+        fout << "\t\t<attnum name=\"rim diameter\" unit=\"m\" val=\"" << (tires.getFloatValue("FRONT", "RIM_RADIUS") * 2.0f) << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"tire width\" unit=\"m\" val=\"" << tires.getValue("FRONT", "WIDTH") << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"tire height\" unit=\"m\" val=\"" << (tires.getFloatValue("FRONT", "RADIUS") * 2.0f) << "\"/>" << std::endl;
+//      fout << "\t\t<attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >" << std::endl;
+//      fout << "\t\t<attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >" << std::endl;
+//      fout << "\t\t<attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >" << std::endl;
+//      fout << "\t\t<attnum name = "camber" min = "-5" max = "0" unit = "deg" val = "-5" / >" << std::endl;
+//      fout << "\t\t<attnum name = "stiffness" val = "27.0" / >" << std::endl;
+//      fout << "\t\t<attnum name = "dynamic friction" unit = "%" val = "80" / >" << std::endl;
+//      fout << "\t\t<attnum name = "rolling resistance" val = "0.02" / >" << std::endl;
+//      fout << "\t\t<attnum name = "mu" min = "0.05" max = "1.6" val = "1.6" / >" << std::endl;
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Front Left Wheel\">" << std::endl;
 //      <attnum name = "ypos" unit = "m" val = "-0.83" / >
-//      <attnum name = "rim diameter" unit = "in" min = "16" max = "18" val = "18.0" / >
-//      <attnum name = "tire width" unit = "mm" min = "135" max = "285" val = "255" / >
-//      <attnum name = "tire height-width ratio" min = "0.3" max = "0.8" val = ".40" / >
+        fout << "\t\t<attnum name=\"rim diameter\" unit=\"m\" val=\"" << (tires.getFloatValue("FRONT", "RIM_RADIUS") * 2.0f) << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"tire width\" unit=\"m\" val=\"" << tires.getValue("FRONT", "WIDTH") << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"tire height\" unit=\"m\" val=\"" << (tires.getFloatValue("FRONT", "RADIUS") * 2.0f) << "\"/>" << std::endl;
 //      <attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >
 //      <attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >
 //      <attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >
@@ -269,9 +289,9 @@ static void writeConfig(const std::string& filename)
 
         fout << "\t<section name=\"Rear Right Wheel\">" << std::endl;
 //      <attnum name = "ypos" unit = "m" val = "-0.83" / >
-//      <attnum name = "rim diameter" unit = "in" min = "16" max = "18" val = "18.0" / >
-//      <attnum name = "tire width" unit = "mm" min = "135" max = "285" val = "255" / >
-//      <attnum name = "tire height-width ratio" min = "0.3" max = "0.8" val = ".40" / >
+        fout << "\t\t<attnum name=\"rim diameter\" unit=\"m\" val=\"" << (tires.getFloatValue("REAR", "RIM_RADIUS") * 2.0f) << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"tire width\" unit=\"m\" val=\"" << tires.getValue("REAR", "WIDTH") << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"tire height\" unit=\"m\" val=\"" << (tires.getFloatValue("REAR", "RADIUS") * 2.0f) << "\"/>" << std::endl;
 //      <attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >
 //      <attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >
 //      <attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >
@@ -284,9 +304,9 @@ static void writeConfig(const std::string& filename)
 
         fout << "\t<section name=\"Rear Left Wheel\">" << std::endl;
 //      <attnum name = "ypos" unit = "m" val = "-0.83" / >
-//      <attnum name = "rim diameter" unit = "in" min = "16" max = "18" val = "18.0" / >
-//      <attnum name = "tire width" unit = "mm" min = "135" max = "285" val = "255" / >
-//      <attnum name = "tire height-width ratio" min = "0.3" max = "0.8" val = ".40" / >
+        fout << "\t\t<attnum name=\"rim diameter\" unit=\"m\" val=\"" << (tires.getFloatValue("REAR", "RIM_RADIUS") * 2.0f) << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"tire width\" unit=\"m\" val=\"" << tires.getValue("REAR", "WIDTH") << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"tire height\" unit=\"m\" val=\"" << (tires.getFloatValue("REAR", "RADIUS") * 2.0f) << "\"/>" << std::endl;
 //      <attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >
 //      <attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >
 //      <attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >
@@ -447,13 +467,13 @@ int main(int argc, char* argv[])
 
             if (extractCarParts)
             {
-                extract(model, "STEER_LR", xform, "steer.acc", false);
-                extract(model, "STEER_HR", xform, "histeer.acc", false);
+                extract(model, "STEER_LR", xform, "steer.acc");
+                extract(model, "STEER_HR", xform, "histeer.acc");
 
-                extract(model, "WHEEL_RF", xform, "wheel0.acc", true);
-                extract(model, "WHEEL_LF", xform, "wheel1.acc", true);
-                extract(model, "WHEEL_RR", xform, "wheel2.acc", true);
-                extract(model, "WHEEL_LR", xform, "wheel3.acc", true);
+                remove(model, "WHEEL_RF");
+                remove(model, "WHEEL_LF");
+                remove(model, "WHEEL_RR");
+                remove(model, "WHEEL_LR");
             }
 
             model.transform(xform);
