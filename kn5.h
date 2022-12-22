@@ -220,7 +220,7 @@ public:
 
     void writeAc3dObject(std::ostream& fout, const Node& node, const std::set<int>& usedMaterialIDs, bool convertToPNG, bool outputACC, bool useDiffuse) const;
     void writeAc3dMaterials(std::ostream& fout, const Node& node, const std::set<int> & usedMaterialIDs) const;
-    void getUsedMaterials(const kn5::Node& node, std::set<int>& used) const;
+    void getUsedMaterials(const kn5::Node& node, std::set<int>& usedMaterialIDs) const;
     int getNewMaterialID(int materialID, const std::set<int>& usedMaterialIDs) const;
 
     Node * kn5::findNode(Node& node, Node::NodeType type, const std::string& name);

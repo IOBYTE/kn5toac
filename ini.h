@@ -11,7 +11,7 @@ private:
 
 public:
     ini() = default;
-    ini(const std::string& fileName)
+    explicit ini(const std::string& fileName)
     {
         read(fileName);
     }

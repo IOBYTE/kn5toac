@@ -64,7 +64,7 @@ void ini::read(const std::string& fileName)
 
             const std::string key = rtrim(trimmed.substr(0, equal));
             std::string value = ltrim(trimmed.substr(equal + 1));
-            size_t comment = value.find(';');
+            const size_t comment = value.find(';');
             if (comment != std::string::npos)
                 value = rtrim(value.substr(0, comment));
 

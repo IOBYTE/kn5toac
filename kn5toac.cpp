@@ -232,25 +232,34 @@ static void writeConfig(const std::string& filename, kn5& model)
 //		<attnum name="max pressure" unit="kPa" min="100" max="150000" val="25000"/>
         fout << "\t</section>" << std::endl;
 
+        float wheelbase = suspensions.getFloatValue("BASIC", "WHEELBASE");
+        float cg = suspensions.getFloatValue("BASIC", "CG_LOCATION");
+
         fout << "\t<section name=\"Front Axle\">" << std::endl;
-//		fout << "\t\t<attnum name=\"xpos\" min=\"0.5\" max=\"2.5\" val=\"" << 1.22 "\"/>" << std::endl;
+		fout << "\t\t<attnum name=\"xpos\" val=\"" << (wheelbase * cg) << "\"/>" << std::endl;
 //		<attnum name="inertia" unit="kg.m2" val="0.0056"/>
 //		<attnum name="roll center height" unit="m" min="0" max="0.5" val="0.11"/>
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Rear Axle\">" << std::endl;
-//		fout << "\t\t<attnum name=\"xpos\" min=\"-2.5\" max=\"-0.5\" val=\"" << -1.14 << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"xpos\" val=\"" << ((cg - 1) * wheelbase) << "\"/>" << std::endl;
 //		<attnum name="inertia" unit="kg.m2" val="0.0080"/>
 //		<attnum name="roll center height" unit="m" min="0" max="0.5" val="0.14"/>
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Front Differential\">" << std::endl;
+//		<attstr name="type" in="SPOOL,FREE,LIMITED SLIP" val="LIMITED SLIP"/>
+        if (drivetrain.getValue("TRACTION", "TYPE") != "RWD")
+		    fout << "\t\t<attnum name=\"ratio\" val=\"" << drivetrain.getValue("GEARS", "FINAL") << "\"/>" << std::endl;
+//		<attnum name="inertia" unit="kg.m2" val="0.0488"/>
+//		<attnum name="efficiency" val="1.0"/>
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Rear Differential\">" << std::endl;
 //		<attstr name="type" in="SPOOL,FREE,LIMITED SLIP" val="LIMITED SLIP"/>
+        if (drivetrain.getValue("TRACTION", "TYPE") != "FWD")
+            fout << "\t\t<attnum name=\"ratio\" val=\"" << drivetrain.getValue("GEARS", "FINAL") << "\"/>" << std::endl;
 //		<attnum name="inertia" unit="kg.m2" val="0.0488"/>
-//		<attnum name="ratio" min="0" max="10" val="3.07"/>
 //		<attnum name="efficiency" val="1.0"/>
         fout << "\t</section>" << std::endl;
 
@@ -492,7 +501,7 @@ int main(int argc, char* argv[])
                 remove(model, kn5::Node::Transform, "WHEEL_RR");
                 remove(model, kn5::Node::Transform, "WHEEL_LR");
 
-                ini brakes("data/brakes.ini");
+                const ini brakes("data/brakes.ini");
 
                 remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_LF"));
                 remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_RF"));
