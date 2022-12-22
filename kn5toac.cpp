@@ -30,9 +30,9 @@ static void extract(kn5& model, const std::string& name, const kn5::Matrix& xfor
     }
 }
 
-static void remove(kn5& model, const std::string& name)
+static void remove(kn5& model, kn5::Node::NodeType type, const std::string& name)
 {
-    kn5::Node* node = model.findNode(kn5::Node::Transform, name);
+    kn5::Node* node = model.findNode(type, name);
 
     if (node)
     {
@@ -50,7 +50,7 @@ static void remove(kn5& model, const std::string& name)
     }
 }
 
-static void writeConfig(const std::string& filename)
+static void writeConfig(const std::string& filename, kn5& model)
 {
     try
     {
@@ -370,29 +370,41 @@ static void writeConfig(const std::string& filename)
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Front Right Brake\">" << std::endl;
-//		<attnum name="disk diameter" unit="mm" min="100" max="380" val="380"/>
+        std::string nodeName = brakes.getValue("DISCS_GRAPHICS", "DISC_RF");
+        const kn5::Node* disk = model.findNode(kn5::Node::Transform, nodeName);
+        if (disk && disk->m_children.size() == 1 && disk->m_children[0].m_type == kn5::Node::Mesh)
+            fout << "\t\t<attnum name=\"disk diameter\" unit=\"m\" val=\"" << (disk->m_children[0].m_boundingSphere.m_radius * 2.0f) << "\"/>" << std::endl;
 //		<attnum name="piston area" unit="cm2" val="50"/>
 //		<attnum name="mu" val="0.45"/>
 //		<attnum name="inertia" unit="kg.m2" val="0.1241"/>
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Front Left Brake\">" << std::endl;
-//		<attnum name="disk diameter" unit="mm" min="100" max="380" val="380"/>
+        nodeName = brakes.getValue("DISCS_GRAPHICS", "DISC_LF");
+        disk = model.findNode(kn5::Node::Transform, nodeName);
+        if (disk && disk->m_children.size() == 1 && disk->m_children[0].m_type == kn5::Node::Mesh)
+            fout << "\t\t<attnum name=\"disk diameter\" unit=\"m\" val=\"" << (disk->m_children[0].m_boundingSphere.m_radius * 2.0f) << "\"/>" << std::endl;
 //		<attnum name="piston area" unit="cm2" val="50"/>
 //		<attnum name="mu" val="0.45"/>
 //		<attnum name="inertia" unit="kg.m2" val="0.1241"/>
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Rear Right Brake\">" << std::endl;
-//		<attnum name="disk diameter" unit="mm" min="100" max="380" val="380"/>
-//		<attnum name="piston area" unit="cm2" val="50"/>
+        nodeName = brakes.getValue("DISCS_GRAPHICS", "DISC_RR");
+        disk = model.findNode(kn5::Node::Transform, nodeName);
+        if (disk && disk->m_children.size() == 1 && disk->m_children[0].m_type == kn5::Node::Mesh)
+            fout << "\t\t<attnum name=\"disk diameter\" unit=\"m\" val=\"" << (disk->m_children[0].m_boundingSphere.m_radius * 2.0f) << "\"/>" << std::endl;
+ //		<attnum name="piston area" unit="cm2" val="50"/>
 //		<attnum name="mu" val="0.45"/>
 //		<attnum name="inertia" unit="kg.m2" val="0.1241"/>
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Rear Left Brake\">" << std::endl;
-//		<attnum name="disk diameter" unit="mm" min="100" max="380" val="380"/>
-//		<attnum name="piston area" unit="cm2" val="50"/>
+        nodeName = brakes.getValue("DISCS_GRAPHICS", "DISC_LR");
+        disk = model.findNode(kn5::Node::Transform, nodeName);
+        if (disk && disk->m_children.size() == 1 && disk->m_children[0].m_type == kn5::Node::Mesh)
+            fout << "\t\t<attnum name=\"disk diameter\" unit=\"m\" val=\"" << (disk->m_children[0].m_boundingSphere.m_radius * 2.0f) << "\"/>" << std::endl;
+ //		<attnum name="piston area" unit="cm2" val="50"/>
 //		<attnum name="mu" val="0.45"/>
 //		<attnum name="inertia" unit="kg.m2" val="0.1241"/>
         fout << "\t</section>" << std::endl;
@@ -441,6 +453,11 @@ int main(int argc, char* argv[])
                 model.dump(of);
         }
 
+        if (writeCarConfig)
+        {
+            writeConfig("formula_k.xml", model);
+        }
+
         if (writeModel)
         {
             kn5::Matrix xform;
@@ -470,10 +487,17 @@ int main(int argc, char* argv[])
                 extract(model, "STEER_LR", xform, "steer.acc");
                 extract(model, "STEER_HR", xform, "histeer.acc");
 
-                remove(model, "WHEEL_RF");
-                remove(model, "WHEEL_LF");
-                remove(model, "WHEEL_RR");
-                remove(model, "WHEEL_LR");
+                remove(model, kn5::Node::Transform, "WHEEL_RF");
+                remove(model, kn5::Node::Transform, "WHEEL_LF");
+                remove(model, kn5::Node::Transform, "WHEEL_RR");
+                remove(model, kn5::Node::Transform, "WHEEL_LR");
+
+                ini brakes("data/brakes.ini");
+
+                remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_LF"));
+                remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_RF"));
+                remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_LR"));
+                remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_RR"));
             }
 
             model.transform(xform);
@@ -490,11 +514,6 @@ int main(int argc, char* argv[])
                 directory.append(textureDirectory);
 
             model.writeTextures(directory.string(), convertToPNG);
-        }
-
-        if (writeCarConfig)
-        {
-            writeConfig("formula_k.xml");
         }
     }
     catch (std::ifstream::failure& e)
