@@ -50,7 +50,7 @@ static void remove(kn5& model, kn5::Node::NodeType type, const std::string& name
     }
 }
 
-static void writeConfig(const std::string& filename, kn5& model)
+static void writeConfig(const std::string& filename, kn5& model, float length, float width, float height)
 {
     try
     {
@@ -132,8 +132,8 @@ static void writeConfig(const std::string& filename, kn5& model)
 //        fout << "\t\t<attnum name=\"body length\" unit=\"m\" val=\"" << 4.86 << "\"/>" << std::endl;
 //        fout << "\t\t<attnum name=\"body width\" unit=\"m\" val=\"" << 2.00 << "\"/>" << std::endl;
 //        fout << "\t\t<attnum name=\"body height\" unit=\"m\" val=\"" << 1.05 << "\"/>" << std::endl;
-//        fout << "\t\t<attnum name=\"overall length\" unit=\"m\" val=\"" << 4.86 << "\"/>" << std::endl;
-//        fout << "\t\t<attnum name=\"overall width\" unit=\"m\" val=\"" << 2.00 << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"overall length\" unit=\"m\" val=\"" << length << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"overall width\" unit=\"m\" val=\"" << width << "\"/>" << std::endl;
         fout << "\t\t<attnum name=\"mass\" unit=\"kg\" val=\"" << car.getValue("BASIC", "TOTALMASS") << "\"/>" << std::endl;
 //        fout << "\t\t<attnum name=\"GC height\" unit=\"m\" val=\"" << 0.24 << "\"/>" << std::endl;
         fout << "\t\t<attnum name=\"front-rear weight repartition\" val=\"" << suspensions.getValue("BASIC", "CG_LOCATION") << "\"/>" << std::endl;
@@ -438,6 +438,7 @@ int main(int argc, char* argv[])
     bool        useDiffuse = true;
     bool        extractCarParts = true;
     bool        writeCarConfig = true;
+    bool        dumpCollider = true;
     std::string textureDirectory("textures");
 
     if (argc != 2)
@@ -446,12 +447,12 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    kn5 model;
-
     const std::string file(argv[1]);
 
     try
     {
+        kn5 model;
+
         model.read(file);
 
         if (dumpModel)
@@ -464,7 +465,45 @@ int main(int argc, char* argv[])
 
         if (writeCarConfig)
         {
-            writeConfig("formula_k.xml", model);
+            kn5 collider;
+
+            collider.read("collider.kn5");
+
+            if (dumpCollider)
+            {
+                std::ofstream of1("collider.kn5.dump");
+
+                if (of1)
+                    collider.dump(of1);
+            }
+
+            kn5::Vec3 minimum = { 100000, 100000, 100000 };
+            kn5::Vec3 maximum = { -100000, -100000, -100000 };
+
+            kn5::Node& mesh = collider.m_node;
+            while (mesh.m_type == kn5::Node::Transform && mesh.m_children.size() == 1)
+                mesh = mesh.m_children[0];
+
+            if (mesh.m_type == kn5::Node::Mesh)
+            {
+                for (const auto& vertex : mesh.m_vertices)
+                {
+                    for (size_t i = 0; i < 3; i++)
+                    {
+                        if (vertex.m_position[i] < minimum[i])
+                            minimum[i] = vertex.m_position[i];
+
+                        if (vertex.m_position[i] > maximum[i])
+                            maximum[i] = vertex.m_position[i];
+                    }
+                }
+            }
+
+            float length = maximum[2] - minimum[2];
+            float width = maximum[0] - minimum[0];
+            float height = maximum[1] - minimum[1];
+
+            writeConfig("formula_k.xml", model, length, width, height);
         }
 
         if (writeModel)
