@@ -103,7 +103,7 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Graphic Objects\">" << std::endl;
-//	    <attstr name="env" val="formula_k.kn5.ac"/>
+	    fout << "\t\t<attstr name=\"env\" val=\"" << modelFileName << "\"/>" << std::endl;
 //	    <attstr name="wheel texture"	val="tex-wheel.rgb"/>
 //	    <attstr name="shadow	texture" val="shadow.rgb"/>
 //	    <attstr name="tachometer	texture" val="rpm20000.rgb"/>
@@ -124,9 +124,19 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
         fout << "\t\t<section name=\"Steer Wheel\">" << std::endl;
         fout << "\t\t\t<attstr name=\"model\" val=\"steer.acc\"/>" << std::endl;
         fout << "\t\t\t<attstr name=\"hi res model\" val=\"histeer.acc\"/>" << std::endl;
-//	 	<attnum name="xpos" val="0.4"/>
-//	 	<attnum name="ypos" val="0"/>
-//	 	<attnum name="zpos" val="0.46"/>
+        kn5::Vec3   steer = { 0, 0, 0 };
+        kn5::Node* steerNode = model.findNode(kn5::Node::Transform, "STEER_LR");
+
+        if (steerNode)
+        {
+            steer[0] = steerNode->m_matrix.m_data[3][2];
+            steer[1] = steerNode->m_matrix.m_data[3][0];
+            steer[2] = steerNode->m_matrix.m_data[3][1];
+
+            fout << "\t\t\t<attnum name=\"xpos\" val=\"" << steer[0] << "\"/>" << std::endl;
+            fout << "\t\t\t<attnum name=\"ypos\" val=\"" << steer[1] << "\"/>" << std::endl;
+            fout << "\t\t\t<attnum name=\"zpos\" val=\"" << steer[2] << "\"/>" << std::endl;
+        }
 //	 	<attnum name="angle" val="0"/>
         fout << "\t\t</section>" << std::endl;
         fout << "\t\t<section name=\"Driver\">" << std::endl;
@@ -617,7 +627,11 @@ int main(int argc, char* argv[])
             remove(model, kn5::Node::Transform, "WHEEL_RR");
             remove(model, kn5::Node::Transform, "WHEEL_LR");
 
-            const ini brakes("data/brakes.ini");
+            std::filesystem::path iniFilePath = inputPath;
+
+            iniFilePath.append("data/brakes.ini");
+
+            const ini brakes(iniFilePath.string());
 
             remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_LF"));
             remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_RF"));
