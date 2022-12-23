@@ -50,7 +50,7 @@ static void remove(kn5& model, kn5::Node::NodeType type, const std::string& name
     }
 }
 
-static void writeConfig(const std::filesystem::path& inputPath, const std::string& filename, kn5& model, float length, float width, float height)
+static void writeConfig(const std::filesystem::path& inputPath, const std::string& filename, kn5& model, float length, float width, float height, const std::string& category)
 {
     std::string inputPathString = inputPath.string();
 
@@ -63,10 +63,14 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
         ini car(inputPathString + "data/car.ini");
         ini colliders(inputPathString + "data/colliders.ini");
         ini drivetrain(inputPathString + "data/drivetrain.ini");
-        ini electronics(inputPathString + "data/electronics.ini");
+        ini electronics;
+        if (std::filesystem::exists(inputPathString + "data/electronics.ini"))
+            electronics.read(inputPathString + "data/electronics.ini");
         ini engine(inputPathString + "data/engine.ini");
         ini lods(inputPathString + "data/lods.ini");
-        ini flames(inputPathString + "data/flames.ini");
+        ini flames;
+        if (std::filesystem::exists(inputPathString + "data/flames.ini"))
+            flames.read(inputPathString + "data/flames.ini");
         ini setup(inputPathString + "data/setup.ini");
         ini suspensions(inputPathString + "data/suspensions.ini");
         ini tires(inputPathString + "data/tyres.ini");
@@ -144,7 +148,7 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Car\">" << std::endl;
-        fout << "\t\t<attstr name=\"category\" val=\"" << "Formula-K" << "\"/>" << std::endl;
+        fout << "\t\t<attstr name=\"category\" val=\"" << category << "\"/>" << std::endl;
 //        fout << "\t\t<attnum name=\"body length\" unit=\"m\" val=\"" << 4.86 << "\"/>" << std::endl;
 //        fout << "\t\t<attnum name=\"body width\" unit=\"m\" val=\"" << 2.00 << "\"/>" << std::endl;
 //        fout << "\t\t<attnum name=\"body height\" unit=\"m\" val=\"" << 1.05 << "\"/>" << std::endl;
@@ -456,11 +460,12 @@ int main(int argc, char* argv[])
     bool        extractCarParts = true;
     bool        writeCarConfig = true;
     bool        dumpCollider = true;
-    std::string textureDirectory; // ("textures");  // TODO remove this
+    std::string category("Formula-K");
 
     // TODO get these from commandline
     std::string inputDirectory("C:/Program Files (x86)/Steam/steamapps/common/assettocorsa/sdk/dev/content/cars/formula_k");
-    std::string outputDirectory("C:/Users/Bob/speed-dreams-code/data/cars/models/formula_k");
+//    std::string inputDirectory("C:/Users/Bob/acm_tutorial_basic");
+    std::string outputDirectory("C:/Users/Bob/speed-dreams-code/data/cars/models");
 
     if (argc != 1)
     {
@@ -472,6 +477,9 @@ int main(int argc, char* argv[])
     std::filesystem::path   outputPath(outputDirectory);
 
     const std::string       inputFileDirectoryName(inputPath.filename().string());
+
+    outputPath.append(inputFileDirectoryName);
+
     const std::string       inputFileName(inputFileDirectoryName + ".kn5");
 
     std::filesystem::path   inputFilePath(inputPath);
@@ -581,7 +589,7 @@ int main(int argc, char* argv[])
 
         configFilePath.append(inputFileDirectoryName + ".xml");
 
-        writeConfig(inputPath, configFilePath.string(), model, length, width, height);
+        writeConfig(inputPath, configFilePath.string(), model, length, width, height, category);
     }
 
     if (writeModel)
@@ -650,14 +658,7 @@ int main(int argc, char* argv[])
     }
 
     if (writeTextures)
-    {
-        std::filesystem::path directory = outputPath;
-
-        if (!textureDirectory.empty())
-            directory.append(textureDirectory);
-
-        model.writeTextures(directory.string(), convertToPNG, deleteDDS);
-    }
+        model.writeTextures(outputPath.string(), convertToPNG, deleteDDS);
 
     return EXIT_SUCCESS;
 }
