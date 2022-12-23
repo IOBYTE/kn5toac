@@ -610,13 +610,15 @@ void kn5::readTextures(std::istream& stream)
         texture.read(stream);
 }
 
-void kn5::writeTextures(const std::string& directory, bool convertToPNG) const
+void kn5::writeTextures(const std::string& directory, bool convertToPNG, bool deleteDDS) const
 {
     if (!std::filesystem::exists(directory))
     {
         if (!std::filesystem::create_directory(directory))
             throw std::runtime_error("Couldn't create directory: " + directory);
     }
+
+    std::set<std::string>   filesToDelete;
 
     for (size_t i = 0; i < m_textures.size(); i++)
     {
@@ -651,6 +653,8 @@ void kn5::writeTextures(const std::string& directory, bool convertToPNG) const
 
             if (!png.empty() && !std::filesystem::exists(png))
             {
+                filesToDelete.insert(texture);
+
                 std::string command("magick convert " + texture + " ");
 
                 for (const auto & material : m_materials)
@@ -673,6 +677,9 @@ void kn5::writeTextures(const std::string& directory, bool convertToPNG) const
             }
         }
     }
+
+    for (const auto& file : filesToDelete)
+        std::filesystem::remove(file);
 }
 
 void kn5::readMaterials(std::istream& stream)

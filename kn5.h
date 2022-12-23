@@ -239,7 +239,7 @@ public:
     void transform(Node &node, const Matrix& matrix);
     void removeEmptyNodes();
     Node * findNode(Node::NodeType type, const std::string& name);
-    void writeTextures(const std::string& directory, bool convertToPNG) const;
+    void writeTextures(const std::string& directory, bool convertToPNG, bool deleteDDS) const;
     void writeAc3d(const std::string& file, bool convertToPNG, bool outputACC, bool useDiffuse) const;
     void writeAc3d(const std::string& file, const Node& node, bool convertToPNG, bool outputACC, bool useDiffuse) const;
 };

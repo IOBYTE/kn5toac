@@ -50,24 +50,28 @@ static void remove(kn5& model, kn5::Node::NodeType type, const std::string& name
     }
 }
 
-static void writeConfig(const std::string& filename, kn5& model, float length, float width, float height)
+static void writeConfig(const std::filesystem::path& inputPath, const std::string& filename, kn5& model, float length, float width, float height)
 {
+    std::string inputPathString = inputPath.string();
+
+    inputPathString += std::filesystem::path::preferred_separator;
+
     try
     {
-        ini aero("data/aero.ini");
-        ini brakes("data/brakes.ini");
-        ini car("data/car.ini");
-        ini colliders("data/colliders.ini");
-        ini drivetrain("data/drivetrain.ini");
-        ini electronics("data/electronics.ini");
-        ini engine("data/engine.ini");
-        ini lods("data/lods.ini");
-        ini flames("data/flames.ini");
-        ini setup("data/setup.ini");
-        ini suspensions("data/suspensions.ini");
-        ini tires("data/tyres.ini");
+        ini aero(inputPathString + "data/aero.ini");
+        ini brakes(inputPathString + "data/brakes.ini");
+        ini car(inputPathString + "data/car.ini");
+        ini colliders(inputPathString + "data/colliders.ini");
+        ini drivetrain(inputPathString + "data/drivetrain.ini");
+        ini electronics(inputPathString + "data/electronics.ini");
+        ini engine(inputPathString + "data/engine.ini");
+        ini lods(inputPathString + "data/lods.ini");
+        ini flames(inputPathString + "data/flames.ini");
+        ini setup(inputPathString + "data/setup.ini");
+        ini suspensions(inputPathString + "data/suspensions.ini");
+        ini tires(inputPathString + "data/tyres.ini");
 
-        std::string modelFileName = "formula_k.kn5.ac";
+        std::string modelFileName = inputPath.filename().string() + ".ac";
 
         std::ofstream   fout(filename);
 
@@ -434,145 +438,209 @@ int main(int argc, char* argv[])
     bool        dumpModel = true;
     bool        writeTextures = true;
     bool        convertToPNG = true;
+    bool        deleteDDS = true;
     bool        outputACC = false;
     bool        useDiffuse = true;
     bool        extractCarParts = true;
     bool        writeCarConfig = true;
     bool        dumpCollider = true;
-    std::string textureDirectory("textures");
+    std::string textureDirectory; // ("textures");  // TODO remove this
 
-    if (argc != 2)
+    // TODO get these from commandline
+    std::string inputDirectory("C:/Program Files (x86)/Steam/steamapps/common/assettocorsa/sdk/dev/content/cars/formula_k");
+    std::string outputDirectory("C:/Users/Bob/speed-dreams-code/data/cars/models/formula_k");
+
+    if (argc != 1)
     {
-        std::cerr << "Usage: kn5 file.kn5" << std::endl;
+        std::cerr << "Usage: kn5" << std::endl;
         return EXIT_FAILURE;
     }
 
-    const std::string file(argv[1]);
+    std::filesystem::path   inputPath(inputDirectory);
+    std::filesystem::path   outputPath(outputDirectory);
+
+    const std::string       inputFileDirectoryName(inputPath.filename().string());
+    const std::string       inputFileName(inputFileDirectoryName + ".kn5");
+
+    std::filesystem::path   inputFilePath(inputPath);
+
+    inputFilePath.append(inputFileName);
+
+    kn5 model;
 
     try
     {
-        kn5 model;
-
-        model.read(file);
-
-        if (dumpModel)
-        {
-            std::ofstream of(file + ".dump");
-
-            if (of)
-                model.dump(of);
-        }
-
-        if (writeCarConfig)
-        {
-            kn5 collider;
-
-            collider.read("collider.kn5");
-
-            if (dumpCollider)
-            {
-                std::ofstream of1("collider.kn5.dump");
-
-                if (of1)
-                    collider.dump(of1);
-            }
-
-            kn5::Vec3 minimum = { 100000, 100000, 100000 };
-            kn5::Vec3 maximum = { -100000, -100000, -100000 };
-
-            kn5::Node& mesh = collider.m_node;
-            while (mesh.m_type == kn5::Node::Transform && mesh.m_children.size() == 1)
-                mesh = mesh.m_children[0];
-
-            if (mesh.m_type == kn5::Node::Mesh)
-            {
-                for (const auto& vertex : mesh.m_vertices)
-                {
-                    for (size_t i = 0; i < 3; i++)
-                    {
-                        if (vertex.m_position[i] < minimum[i])
-                            minimum[i] = vertex.m_position[i];
-
-                        if (vertex.m_position[i] > maximum[i])
-                            maximum[i] = vertex.m_position[i];
-                    }
-                }
-            }
-
-            float length = maximum[2] - minimum[2];
-            float width = maximum[0] - minimum[0];
-            float height = maximum[1] - minimum[1];
-
-            writeConfig("formula_k.xml", model, length, width, height);
-        }
-
-        if (writeModel)
-        {
-            kn5::Matrix xform;
-
-            xform.m_data[0][0] = 0;
-            xform.m_data[0][1] = 0;
-            xform.m_data[0][2] = -1;
-            xform.m_data[0][3] = 0;
-
-            xform.m_data[1][0] = 0;
-            xform.m_data[1][1] = 1;
-            xform.m_data[1][2] = 0;
-            xform.m_data[1][3] = 0;
-
-            xform.m_data[2][0] = 1;
-            xform.m_data[2][1] = 0;
-            xform.m_data[2][2] = 0;
-            xform.m_data[2][3] = 0;
-
-            xform.m_data[3][0] = 0;
-            xform.m_data[3][1] = 0;
-            xform.m_data[3][2] = 0;
-            xform.m_data[3][3] = 1;
-
-            if (extractCarParts)
-            {
-                extract(model, "STEER_LR", xform, "steer.acc");
-                extract(model, "STEER_HR", xform, "histeer.acc");
-
-                remove(model, kn5::Node::Transform, "WHEEL_RF");
-                remove(model, kn5::Node::Transform, "WHEEL_LF");
-                remove(model, kn5::Node::Transform, "WHEEL_RR");
-                remove(model, kn5::Node::Transform, "WHEEL_LR");
-
-                const ini brakes("data/brakes.ini");
-
-                remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_LF"));
-                remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_RF"));
-                remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_LR"));
-                remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_RR"));
-            }
-
-            model.transform(xform);
-            model.removeEmptyNodes();
-
-            model.writeAc3d(file + (outputACC ? ".acc" : ".ac"), convertToPNG, outputACC, useDiffuse);
-        }
-
-        if (writeTextures)
-        {
-            std::filesystem::path directory = std::filesystem::canonical(file).parent_path();
-
-            if (!textureDirectory.empty())
-                directory.append(textureDirectory);
-
-            model.writeTextures(directory.string(), convertToPNG);
-        }
+        model.read(inputFilePath.string());
     }
     catch (std::ifstream::failure& e)
     {
-        std::cerr << "Error reading: " << file << " : " << e.code().message() << std::endl;
+        std::cerr << "Error reading: " << inputFilePath.string() << " : " << e.code().message() << std::endl;
         return EXIT_FAILURE;
     }
     catch (std::runtime_error& e)
     {
-        std::cerr << "Error reading: " << file << " : " << e.what() << std::endl;
+        std::cerr << "Error reading: " << inputFilePath.string() << " : " << e.what() << std::endl;
         return EXIT_FAILURE;
+    }
+
+    if (!std::filesystem::exists(outputPath))
+    {
+        if (!std::filesystem::create_directory(outputPath))
+        {
+            std::cerr << "Couldn't create: " << outputPath.string() << std::endl;
+            return EXIT_FAILURE;
+        }
+    }
+
+    if (dumpModel)
+    {
+        std::filesystem::path dumpFilePath = outputPath;
+
+        dumpFilePath.append(inputFileName + ".dump");
+
+        std::ofstream of(dumpFilePath.string());
+
+        if (of)
+            model.dump(of);
+    }
+
+    if (writeCarConfig)
+    {
+        std::filesystem::path   colliderFilePath = inputPath;
+
+        colliderFilePath.append("collider.kn5");
+
+        kn5 collider;
+
+        try
+        {
+            collider.read(colliderFilePath.string());
+        }
+        catch (std::ifstream::failure& e)
+        {
+            std::cerr << "Error reading: " << colliderFilePath.string() << " : " << e.code().message() << std::endl;
+            return EXIT_FAILURE;
+        }
+        catch (std::runtime_error& e)
+        {
+            std::cerr << "Error reading: " << colliderFilePath.string() << " : " << e.what() << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        if (dumpCollider)
+        {
+            std::filesystem::path dumpFilePath = outputPath;
+
+            dumpFilePath.append("collider.kn5.dump");
+
+            std::ofstream of1(dumpFilePath.string());
+
+            if (of1)
+                collider.dump(of1);
+        }
+
+        kn5::Vec3 minimum = { 100000, 100000, 100000 };
+        kn5::Vec3 maximum = { -100000, -100000, -100000 };
+
+        kn5::Node& mesh = collider.m_node;
+        while (mesh.m_type == kn5::Node::Transform && mesh.m_children.size() == 1)
+            mesh = mesh.m_children[0];
+
+        if (mesh.m_type == kn5::Node::Mesh)
+        {
+            for (const auto& vertex : mesh.m_vertices)
+            {
+                for (size_t i = 0; i < 3; i++)
+                {
+                    if (vertex.m_position[i] < minimum[i])
+                        minimum[i] = vertex.m_position[i];
+
+                    if (vertex.m_position[i] > maximum[i])
+                        maximum[i] = vertex.m_position[i];
+                }
+            }
+        }
+
+        float length = maximum[2] - minimum[2];
+        float width = maximum[0] - minimum[0];
+        float height = maximum[1] - minimum[1];
+
+        std::filesystem::path   configFilePath = outputPath;
+
+        configFilePath.append(inputFileDirectoryName + ".xml");
+
+        writeConfig(inputPath, configFilePath.string(), model, length, width, height);
+    }
+
+    if (writeModel)
+    {
+        kn5::Matrix xform;
+
+        xform.m_data[0][0] = 0;
+        xform.m_data[0][1] = 0;
+        xform.m_data[0][2] = -1;
+        xform.m_data[0][3] = 0;
+
+        xform.m_data[1][0] = 0;
+        xform.m_data[1][1] = 1;
+        xform.m_data[1][2] = 0;
+        xform.m_data[1][3] = 0;
+
+        xform.m_data[2][0] = 1;
+        xform.m_data[2][1] = 0;
+        xform.m_data[2][2] = 0;
+        xform.m_data[2][3] = 0;
+
+        xform.m_data[3][0] = 0;
+        xform.m_data[3][1] = 0;
+        xform.m_data[3][2] = 0;
+        xform.m_data[3][3] = 1;
+
+        if (extractCarParts)
+        {
+            std::filesystem::path extractFilePath = outputPath;
+
+            extractFilePath.append("steer.acc");
+
+            extract(model, "STEER_LR", xform, extractFilePath.string());
+
+            extractFilePath = outputPath;
+
+            extractFilePath.append("histeer.acc");
+
+            extract(model, "STEER_HR", xform, extractFilePath.string());
+
+            remove(model, kn5::Node::Transform, "WHEEL_RF");
+            remove(model, kn5::Node::Transform, "WHEEL_LF");
+            remove(model, kn5::Node::Transform, "WHEEL_RR");
+            remove(model, kn5::Node::Transform, "WHEEL_LR");
+
+            const ini brakes("data/brakes.ini");
+
+            remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_LF"));
+            remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_RF"));
+            remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_LR"));
+            remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_RR"));
+        }
+
+        model.transform(xform);
+        model.removeEmptyNodes();
+
+        std::filesystem::path outputFilePath = outputPath;
+
+        outputFilePath.append(inputFileDirectoryName + (outputACC ? ".acc" : ".ac"));
+
+        model.writeAc3d(outputFilePath.string(), convertToPNG, outputACC, useDiffuse);
+    }
+
+    if (writeTextures)
+    {
+        std::filesystem::path directory = outputPath;
+
+        if (!textureDirectory.empty())
+            directory.append(textureDirectory);
+
+        model.writeTextures(directory.string(), convertToPNG, deleteDDS);
     }
 
     return EXIT_SUCCESS;
