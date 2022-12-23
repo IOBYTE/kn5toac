@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <array>
 
 class ini
 {
@@ -21,6 +22,7 @@ public:
     std::string getValue(const std::string& section, const std::string& key) const;
     int getIntValue(const std::string& section, const std::string& key) const;
     float getFloatValue(const std::string& section, const std::string& key) const;
+    std::array<float,3> getFloatArray3Value(const std::string& section, const std::string& key) const;
 };
 
 #endif

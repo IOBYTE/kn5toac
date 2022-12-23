@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 static const std::string WHITESPACE = " \n\r\t\f\v";
 
@@ -113,4 +114,17 @@ int ini::getIntValue(const std::string& section, const std::string& key) const
 float ini::getFloatValue(const std::string& section, const std::string& key) const
 {
     return std::stof(getValue(section, key));
+}
+
+std::array<float, 3> ini::getFloatArray3Value(const std::string& section, const std::string& key) const
+{
+    std::array<float, 3>    vec3;
+    std::istringstream ss(getValue(section, key));
+    std::string number;
+    size_t index = 0;
+
+    while (std::getline(ss, number, ','))
+        vec3[index++] = std::stof(number);
+
+    return vec3;
 }

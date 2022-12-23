@@ -84,15 +84,17 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
         fout << "<params name=\"" << car.getValue("INFO", "SCREEN_NAME") << "\" type=\"template\">" << std::endl;
 
         fout << "\t<section name=\"Bonnet\">" << std::endl;
-//		<attnum name="xpos" val="-0.25" unit="m"/>
-//		<attnum name="ypos" val="0" unit="m"/>
-//		<attnum name="zpos" val="0.95" unit="m"/>
+        std::array<float, 3> bonnet = car.getFloatArray3Value("GRAPHICS", "BONNET_CAMERA_POS");
+        fout << "\t\t<attnum name=\"xpos\" unit=\"m\" val=\"" << bonnet[2] << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"ypos\" unit=\"m\" val=\"" << bonnet[0] << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"zpos\" unit=\"m\" val=\"" << bonnet[1] << "\"/>" << std::endl;
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Driver\">" << std::endl;
-//      <attnum name = "xpos" val = "0.0" unit = "m" / >
-//      <attnum name = "ypos" val = "0" unit = "m" / >
-//      <attnum name = "zpos" val = "0.64" unit = "m" / >
+        std::array<float, 3> driverEyes = car.getFloatArray3Value("GRAPHICS", "DRIVEREYES");
+        fout << "\t\t<attnum name=\"xpos\" unit=\"m\" val=\"" << driverEyes[2] << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"ypos\" unit=\"m\" val=\"" << driverEyes[0] << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"zpos\" unit=\"m\" val=\"" << driverEyes[1] << "\"/>" << std::endl;
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Sound\">" << std::endl;
