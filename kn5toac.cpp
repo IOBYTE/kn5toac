@@ -1,6 +1,7 @@
 #include "kn5.h"
 #include "ini.h"
 #include "lut.h"
+#include "getopt.h"
 
 #include <fstream>
 #include <filesystem>
@@ -456,30 +457,58 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
     fout.close();
 }
 
+void usage()
+{
+    std::cout << "kn5toac -c category -i input_directory -o output_directory" << std::endl;
+    exit(EXIT_FAILURE);
+}
+
 int main(int argc, char* argv[])
 {
-    // TODO get these from commandline
-    bool        writeModel = true;
-    bool        dumpModel = true;
-    bool        writeTextures = true;
-    bool        convertToPNG = true;
-    bool        deleteDDS = true;
+    bool        writeModel = false;
+    bool        dumpModel = false;
+    bool        writeTextures = false;
+    bool        convertToPNG = false;
+    bool        deleteDDS = false;
     bool        outputACC = false;
-    bool        useDiffuse = true;
-    bool        extractCarParts = true;
-    bool        writeCarConfig = true;
-    bool        dumpCollider = true;
-    std::string category("Formula-K");
-    std::string inputDirectory("C:/Program Files (x86)/Steam/steamapps/common/assettocorsa/sdk/dev/content/cars/formula_k");
-//    std::string inputDirectory("C:/Users/Bob/acm_tutorial_basic");
-//    std::string inputDirectory("C:/Users/Bob/Downloads/1988 Ponatic Fiero GT Pack/bk_pon_fiero_88");
-//    std::string inputDirectory("C:/Users/Bob/Downloads/tgn_audi_rs3_sedan_2020/audi_rs3_2018");
-    std::string outputDirectory("C:/Users/Bob/speed-dreams-code/data/cars/models");
+    bool        useDiffuse = false;
+    bool        extractCarParts = false;
+    bool        writeCarConfig = false;
+    bool        dumpCollider = false;
+    std::string category;
+    std::string inputDirectory;
+    std::string outputDirectory;
 
-    if (argc != 1)
+    int c;
+
+    while ((c = getopt(argc, argv, "c:di:o:")) != -1)
     {
-        std::cerr << "Usage: kn5" << std::endl;
-        return EXIT_FAILURE;
+        switch (c)
+        {
+        case 'c':
+            category = optarg;
+            break;
+        case 'd':
+            dumpModel = true;
+            dumpCollider = true;
+            break;
+        case 'i':
+            inputDirectory = optarg;
+            break;
+        case 'o':
+            outputDirectory = optarg;
+            writeTextures = true;
+            convertToPNG = true;
+            deleteDDS = true;
+            writeModel = true;
+            extractCarParts = true;
+            writeCarConfig = true;
+            useDiffuse = true;
+            break;
+        default:
+            usage();
+            break;
+        }
     }
 
     std::filesystem::path   inputPath(inputDirectory);

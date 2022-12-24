@@ -4,7 +4,7 @@ project (kn5toac VERSION 0.1 LANGUAGES CXX)
 
 configure_file(config.h.in config.h)
 
-add_executable(kn5toac kn5toac.cpp kn5.h kn5.cpp ini.h ini.cpp lut.h lut.cpp)
+add_executable(kn5toac kn5toac.cpp kn5.h kn5.cpp ini.h ini.cpp lut.h lut.cpp getopt.h)
 
 target_compile_features(kn5toac PUBLIC cxx_std_17)
 target_include_directories(kn5toac PUBLIC "${PROJECT_BINARY_DIR}")
