@@ -1,7 +1,6 @@
 #include "kn5.h"
 #include "ini.h"
 #include "lut.h"
-#include "getopt.h"
 
 #include <fstream>
 #include <filesystem>
@@ -459,8 +458,7 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
 
 void usage()
 {
-    std::cout << "kn5toac -c category -i input_directory -o output_directory" << std::endl;
-    exit(EXIT_FAILURE);
+    std::cout << "Usage: kn5toac -c category -i input_directory [-o output_directory]" << std::endl;
 }
 
 int main(int argc, char* argv[])
@@ -479,35 +477,70 @@ int main(int argc, char* argv[])
     std::string inputDirectory;
     std::string outputDirectory;
 
-    int c;
-
-    while ((c = getopt(argc, argv, "c:di:o:")) != -1)
+    for (int i = 1; i < argc; i++)
     {
-        switch (c)
+        std::string arg(argv[i]);
+        if (arg == "-c")
         {
-        case 'c':
-            category = optarg;
-            break;
-        case 'd':
+            if (i < argc)
+            {
+                i++;
+                category = argv[i];
+            }
+            else
+            {
+                usage();
+                return EXIT_FAILURE;
+            }
+        }
+        else if (arg == "-d")
+        {
             dumpModel = true;
             dumpCollider = true;
-            break;
-        case 'i':
-            inputDirectory = optarg;
-            break;
-        case 'o':
-            outputDirectory = optarg;
-            writeTextures = true;
-            convertToPNG = true;
-            deleteDDS = true;
-            writeModel = true;
-            extractCarParts = true;
-            writeCarConfig = true;
-            useDiffuse = true;
-            break;
-        default:
+        }
+        else if (arg == "-h")
+        {
             usage();
-            break;
+            return EXIT_SUCCESS;
+        }
+        else if (arg == "-i")
+        {
+            if (i < argc)
+            {
+                i++;
+                inputDirectory = argv[i];
+            }
+            else
+            {
+                usage();
+                return EXIT_FAILURE;
+            }
+        }
+        else if (arg == "-o")
+        {
+            if (i < argc)
+            {
+                i++;
+                outputDirectory = argv[i];
+                writeTextures = true;
+                convertToPNG = true;
+                deleteDDS = true;
+                writeModel = true;
+                extractCarParts = true;
+                writeCarConfig = true;
+                useDiffuse = true;
+            }
+            else
+            {
+                usage();
+                return EXIT_FAILURE;
+            }
+        }
+        else
+        {
+            std::cerr << "Unknown option: " << arg << std::endl;
+            usage();
+            return EXIT_FAILURE;
         }
     }
 
