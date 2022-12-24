@@ -122,7 +122,7 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
 //    fout << "\t\t\t\t<attstr name=\"wheels\" val=\"yes\"/>" << std::endl;
     fout << "\t\t\t</section>" << std::endl;
     fout << "\t\t</section>" << std::endl;
-    fout << "\t\t<section name = \"Light\">" << std::endl;
+    fout << "\t\t<section name=\"Light\">" << std::endl;
     fout << "\t\t</section>" << std::endl;
     fout << "\t\t<section name=\"Steer Wheel\">" << std::endl;
     fout << "\t\t\t<attstr name=\"model\" val=\"steer.acc\"/>" << std::endl;
@@ -193,8 +193,8 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
 //	<attnum name="cylinders" val="6"/>
 //	<attstr name="shape" in="v,l,h,w" val="h"/>
 //	<attstr name="position" in="front,front-mid,mid,rear-mid,rear," val="rear"/>
-//	<attnum name="revs maxi" unit="rpm" min="5000" max="10000" val="9500"/>
-//	<attnum name="revs limiter" unit="rpm" min="5000" max="9000" val="8500"/>
+//	fout << "\t\t<attnum name=\"revs maxi\" unit=\"rpm\" min=\"5000\" max=\"10000\" val=\"" << ? << "\"/>" << std::endl;
+	fout << "\t\t<attnum name=\"revs limiter\" unit=\"rpm\" val=\"" << engine.getValue("ENGINE_DATA", "LIMITER") << "\"/>" << std::endl;
 //	<attnum name="tickover" unit="rpm" min="900" max="3000" val="1500"/>
 //	<attnum name="fuel cons factor" min="1.1" max="1.3" val="1.13"/>
 //	<attstr name="turbo" val="true"/>
@@ -225,7 +225,7 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
 
     fout << "\t<section name=\"Gearbox\">" << std::endl;
 //	<attnum name="shift time" unit="s" val="0.15"/>
-    fout << "\t\t<section name = \"gears\">" << std::endl;
+    fout << "\t\t<section name=\"gears\">" << std::endl;
     fout << "\t\t\t<section name=\"r\">" << std::endl;
     fout << "\t\t\t\t<attnum name=\"ratio\" val=\"" << drivetrain.getValue("GEARS", "GEAR_R") << "\"/>" << std::endl;
 //	<attnum name="inertia" val="0.0037"/>
