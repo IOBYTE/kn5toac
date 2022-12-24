@@ -55,3 +55,11 @@ You can install ```kn5toac``` using GNU Make:
 ```
 sudo make install
 ```
+Examples
+--------
+```
+kn5toac -c 92MP1 -i "C:/Program Files (x86)/Steam/steamapps/common/assettocorsa/sdk/dev/content/cars/formula_k" -o "C:/Users/Bob/speed-dreams-code/data/cars/models"
+```
+A directory called formula_k will be created in the output directory specified by -o and all the generated files will be placed there.
+
+The input directory must contain the development ini files in the data directory.  Extracting the data ini files from the data.acd file in not supported yet.
