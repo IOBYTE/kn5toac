@@ -303,7 +303,9 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
 //  fout << "\t\t<attnum name = "ypos" unit = "m" val = "-0.83" / >" << std::endl;
     fout << "\t\t<attnum name=\"rim diameter\" unit=\"m\" val=\"" << (tires.getFloatValue("FRONT", "RIM_RADIUS") * 2.0f) << "\"/>" << std::endl;
     fout << "\t\t<attnum name=\"tire width\" unit=\"m\" val=\"" << tires.getValue("FRONT", "WIDTH") << "\"/>" << std::endl;
-    fout << "\t\t<attnum name=\"tire height\" unit=\"m\" val=\"" << (tires.getFloatValue("FRONT", "RADIUS") * 2.0f) << "\"/>" << std::endl;
+//  fout << "\t\t<attnum name=\"tire height\" unit=\"m\" val=\"" << (tires.getFloatValue("FRONT", "RADIUS") * 2.0f) << "\"/>" << std::endl;
+    float tireAspectRatio = (tires.getFloatValue("FRONT", "RADIUS") - tires.getFloatValue("FRONT", "RIM_RADIUS")) / tires.getFloatValue("FRONT", "WIDTH");
+    fout << "\t\t<attnum name=\"tire height-width ratio\" val=\"" << tireAspectRatio << "\"/>" << std::endl;
 //  fout << "\t\t<attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >" << std::endl;
 //  fout << "\t\t<attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >" << std::endl;
 //  fout << "\t\t<attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >" << std::endl;
@@ -318,7 +320,8 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
 //  <attnum name = "ypos" unit = "m" val = "-0.83" / >
     fout << "\t\t<attnum name=\"rim diameter\" unit=\"m\" val=\"" << (tires.getFloatValue("FRONT", "RIM_RADIUS") * 2.0f) << "\"/>" << std::endl;
     fout << "\t\t<attnum name=\"tire width\" unit=\"m\" val=\"" << tires.getValue("FRONT", "WIDTH") << "\"/>" << std::endl;
-    fout << "\t\t<attnum name=\"tire height\" unit=\"m\" val=\"" << (tires.getFloatValue("FRONT", "RADIUS") * 2.0f) << "\"/>" << std::endl;
+//  fout << "\t\t<attnum name=\"tire height\" unit=\"m\" val=\"" << (tires.getFloatValue("FRONT", "RADIUS") * 2.0f) << "\"/>" << std::endl;
+    fout << "\t\t<attnum name=\"tire height-width ratio\" val=\"" << tireAspectRatio << "\"/>" << std::endl;
 //  <attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >
 //  <attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >
 //  <attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >
@@ -333,7 +336,9 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
 //  <attnum name = "ypos" unit = "m" val = "-0.83" / >
     fout << "\t\t<attnum name=\"rim diameter\" unit=\"m\" val=\"" << (tires.getFloatValue("REAR", "RIM_RADIUS") * 2.0f) << "\"/>" << std::endl;
     fout << "\t\t<attnum name=\"tire width\" unit=\"m\" val=\"" << tires.getValue("REAR", "WIDTH") << "\"/>" << std::endl;
-    fout << "\t\t<attnum name=\"tire height\" unit=\"m\" val=\"" << (tires.getFloatValue("REAR", "RADIUS") * 2.0f) << "\"/>" << std::endl;
+//  fout << "\t\t<attnum name=\"tire height\" unit=\"m\" val=\"" << (tires.getFloatValue("REAR", "RADIUS") * 2.0f) << "\"/>" << std::endl;
+    tireAspectRatio = (tires.getFloatValue("REAR", "RADIUS") - tires.getFloatValue("REAR", "RIM_RADIUS")) / tires.getFloatValue("REAR", "WIDTH");
+    fout << "\t\t<attnum name=\"tire height-width ratio\" val=\"" << tireAspectRatio << "\"/>" << std::endl;
 //  <attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >
 //  <attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >
 //  <attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >
@@ -348,7 +353,8 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
 //  <attnum name = "ypos" unit = "m" val = "-0.83" / >
     fout << "\t\t<attnum name=\"rim diameter\" unit=\"m\" val=\"" << (tires.getFloatValue("REAR", "RIM_RADIUS") * 2.0f) << "\"/>" << std::endl;
     fout << "\t\t<attnum name=\"tire width\" unit=\"m\" val=\"" << tires.getValue("REAR", "WIDTH") << "\"/>" << std::endl;
-    fout << "\t\t<attnum name=\"tire height\" unit=\"m\" val=\"" << (tires.getFloatValue("REAR", "RADIUS") * 2.0f) << "\"/>" << std::endl;
+//  fout << "\t\t<attnum name=\"tire height\" unit=\"m\" val=\"" << (tires.getFloatValue("REAR", "RADIUS") * 2.0f) << "\"/>" << std::endl;
+    fout << "\t\t<attnum name=\"tire height-width ratio\" val=\"" << tireAspectRatio << "\"/>" << std::endl;
 //  <attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >
 //  <attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >
 //  <attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >
@@ -473,6 +479,7 @@ int main(int argc, char* argv[])
     bool        extractCarParts = false;
     bool        writeCarConfig = false;
     bool        dumpCollider = false;
+    bool        writeCmake = false;
     std::string category;
     std::string inputDirectory;
     std::string outputDirectory;
@@ -529,6 +536,7 @@ int main(int argc, char* argv[])
                 extractCarParts = true;
                 writeCarConfig = true;
                 useDiffuse = true;
+                writeCmake = true;
             }
             else
             {
@@ -738,6 +746,22 @@ int main(int argc, char* argv[])
 
     if (writeTextures)
         model.writeTextures(outputPath.string(), convertToPNG, deleteDDS);
+
+    if (writeCmake)
+    {
+        std::filesystem::path cmakeFileName = outputPath.append("CMakeLists.txt");
+
+        std::ofstream   fout(cmakeFileName.string());
+
+        if (fout)
+        {
+            fout << "INCLUDE(../../../../cmake/macros.cmake)" << std::endl;
+            fout << std::endl;
+            fout << "SD_INSTALL_CAR(" << inputFileDirectoryName << ")" << std::endl;
+
+            fout.close();
+        }
+    }
 
     return EXIT_SUCCESS;
 }
