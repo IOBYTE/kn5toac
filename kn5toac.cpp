@@ -1,5 +1,6 @@
 #include "kn5.h"
 #include "ini.h"
+#include "lut.h"
 
 #include <fstream>
 #include <filesystem>
@@ -200,7 +201,21 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
 //	<attnum name="turbo rpm" unit="rpm" val="3000"/>
 //	<attnum name="turbo factor" val="1.0"/>
 //	<attnum name="turbo lag" val="1.0"/>
-    fout << "\t\t<section name = \"data points\">" << std::endl;
+
+    fout << "\t\t<section name=\"data points\">" << std::endl;
+    std::filesystem::path powerPath = inputPath;
+    powerPath.append("data");
+    powerPath.append(engine.getValue("HEADER", "POWER_CURVE"));
+    lut power(powerPath.string());
+    const std::vector<std::pair<float, float>>& values = power.getValues();
+    for (size_t i = 0; i < values.size(); i++)
+    {
+         // TODO this is torque at wheels
+         fout << "\t\t\t<section name=\"" << (i + 1) << "\">" << std::endl;
+         fout << "\t\t\t\t<attnum name=\"rpm\" unit=\"rpm\" val=\"" << values[i].first << "\"/>" << std::endl;
+         fout << "\t\t\t\t<attnum name=\"Tq\" unit=\"N.m\" val=\"" << values[i].second << "\"/>" << std::endl;
+         fout << "\t\t\t</section>" << std::endl;
+    }
     fout << "\t\t</section>" << std::endl;
     fout << "\t</section>" << std::endl;
 
@@ -443,6 +458,7 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
 
 int main(int argc, char* argv[])
 {
+    // TODO get these from commandline
     bool        writeModel = true;
     bool        dumpModel = true;
     bool        writeTextures = true;
@@ -454,8 +470,6 @@ int main(int argc, char* argv[])
     bool        writeCarConfig = true;
     bool        dumpCollider = true;
     std::string category("Formula-K");
-
-    // TODO get these from commandline
     std::string inputDirectory("C:/Program Files (x86)/Steam/steamapps/common/assettocorsa/sdk/dev/content/cars/formula_k");
 //    std::string inputDirectory("C:/Users/Bob/acm_tutorial_basic");
 //    std::string inputDirectory("C:/Users/Bob/Downloads/1988 Ponatic Fiero GT Pack/bk_pon_fiero_88");
