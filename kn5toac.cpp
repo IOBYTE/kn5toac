@@ -5,50 +5,31 @@
 #include <fstream>
 #include <filesystem>
 
-static void extract(kn5& model, const std::string& name, const kn5::Matrix& xform, const std::string & file)
+static bool extract(kn5& model, const std::string& name, const kn5::Matrix& xform, const std::string & file)
 {
     kn5::Node* transformNode = model.findNode(kn5::Node::Transform, name);
 
-    if (transformNode)
-    {
-        kn5::Node   node = transformNode->m_children[0];
+    if (transformNode == nullptr || transformNode->m_children.size() != 1)
+        return false;
 
-        node.transform(xform);
+    kn5::Node   node = transformNode->m_children[0];
 
-        model.writeAc3d(file, node, true, file.find(".acc") != std::string::npos, true);
+    node.transform(xform);
 
-        if (transformNode->m_parent)
-        {
-            for (std::vector<kn5::Node>::iterator it = transformNode->m_parent->m_children.begin(); it != transformNode->m_parent->m_children.end(); ++it)
-            {
-                if (&(*it) == transformNode)
-                {
-                    transformNode->m_parent->m_children.erase(it);
-                    break;
-                }
-            }
-        }
-    }
+    model.writeAc3d(file, node, true, file.find(".acc") != std::string::npos, true);
+
+    if (transformNode->m_parent)
+        transformNode->m_parent->removeChild(transformNode);
+
+    return true;
 }
 
 static void remove(kn5& model, kn5::Node::NodeType type, const std::string& name)
 {
     kn5::Node* node = model.findNode(type, name);
 
-    if (node)
-    {
-        if (node->m_parent)
-        {
-            for (std::vector<kn5::Node>::iterator it = node->m_parent->m_children.begin(); it != node->m_parent->m_children.end(); ++it)
-            {
-                if (&(*it) == node)
-                {
-                    node->m_parent->m_children.erase(it);
-                    break;
-                }
-            }
-        }
-    }
+    if (node && node->m_parent)
+        node->m_parent->removeChild(node);
 }
 
 static void writeConfig(const std::filesystem::path& inputPath, const std::string& filename, kn5& model, float length, float width, float height, const std::string& category)

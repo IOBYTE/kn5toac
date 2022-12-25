@@ -212,6 +212,7 @@ public:
         void readMesh(std::istream& stream);
         void readAnimatedMesh(std::istream& stream);
         void transform(const Matrix& matrix);
+        bool removeChild(Node* child);
         void removeEmptyNodes();
     };
 

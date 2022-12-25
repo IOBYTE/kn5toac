@@ -517,10 +517,24 @@ void kn5::Node::transform(const Matrix& matrix)
     }
 }
 
+bool kn5::Node::removeChild(Node* child)
+{
+    for (std::vector<Node>::iterator it = m_children.begin(); it != m_children.end(); ++it)
+    {
+        if (&(*it) == child)
+        {
+            m_children.erase(it);
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void kn5::Node::removeEmptyNodes()
 {
-    std::vector<Node>::iterator it;
-    for (it = m_children.begin(); it != m_children.end(); )
+    for (std::vector<Node>::iterator it = m_children.begin(); it != m_children.end(); )
     {
         if (it->m_type == Transform && it->m_children.empty())
             it = m_children.erase(it);
