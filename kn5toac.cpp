@@ -755,7 +755,9 @@ int main(int argc, char* argv[])
 
     if (writeCmake)
     {
-        std::filesystem::path cmakeFileName = outputPath.append("CMakeLists.txt");
+        std::filesystem::path cmakeFileName = outputPath;
+
+        cmakeFileName.append("CMakeLists.txt");
 
         std::ofstream   fout(cmakeFileName.string());
 
@@ -767,6 +769,16 @@ int main(int argc, char* argv[])
 
             fout.close();
         }
+    }
+
+    if (writeConfig)
+    {
+        std::filesystem::path dataDirectory = outputPath;
+
+        dataDirectory.append("data");
+
+        if (std::filesystem::exists(dataDirectory))
+            std::filesystem::remove_all(dataDirectory);
     }
 
     return EXIT_SUCCESS;
