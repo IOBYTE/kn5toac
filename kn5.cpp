@@ -850,7 +850,11 @@ void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node, const std::se
     {
         const kn5::Material& material = m_materials[materialID];
 
-        fout << "MATERIAL " << "\"" << material.m_name << "\"";
+        std::string materialName = material.m_name;
+
+        materialName.replace(materialName.begin(), materialName.end(), ' ', '_');
+
+        fout << "MATERIAL " << "\"" << materialName << "\"";
 
         const ShaderProperty* property = material.findShaderProperty("ksDiffuse");
 
