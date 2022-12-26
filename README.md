@@ -3,9 +3,7 @@ Overview
 
 I'm just playing around with the idea of using Assetto Corsa cars in Speed Dreams.
 
-I'm trying to convert Assetto Corsa kn5 files to AC3D files just to learn how things work.  It's partially working  but has issues.  Once I get it fully working I will decide if the AC3D file should be modified to what Speed Dreams expects or just write the kn5 importers and use the kn5 files.
-
-It should also be possible to generate a Speed Dreams configuration file from the ini and lut files.
+I'm trying to convert an Assetto Corsa car directory to a Speed Dreams car directory.  It's partially working  but has issues. 
 
 Status
 ------
@@ -18,7 +16,7 @@ The converted Speed Dreams .acc files do not have multiple textures and triangle
 
 The car xml config file is generated from the kn5, ini and lut files.  The ini files in the data.acd file are used when available.
 
-The wheels can't be used without modifications.  The brake disks can't be used because they are created by Speed Dreams.  Reusing these unmodified from the original model will require writing a kn5 loader for osg and ssg.
+The wheels can't be used without modifications.  The brake disks can't be used because they are created by Speed Dreams.  Reusing these unmodified from the original model will require changing the Speed Dreams loaders or writing a kn5 loader for osg and ssg.
 
 It's possible to load and drive the assetto corsa sdk formuls_k car.  The frame rate is low because only the highest quality LOD is loaded.  Not every car parameter is avilable so weird defaults are picked.  The default wheels look funny.  It's not just convert and play yet.
 
