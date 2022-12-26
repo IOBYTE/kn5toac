@@ -25,6 +25,7 @@ public:
         bool isIdentity() const;
         bool isRotation() const;
         bool isTranslation() const;
+        void makeIdentity();
 
         Matrix multiply(const Matrix& matrix) const;
     };

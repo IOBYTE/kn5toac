@@ -23,6 +23,7 @@
         <suppression>clang-tidy-altera-id-dependent-backward-branch</suppression>
         <suppression>clang-analyzer</suppression>
         <suppression>clang-tidy-bugprone-easily-swappable-parameters</suppression>
+        <suppression>clang-tidy-misc-no-recursion</suppression>
     </suppressions>
     <tools>
         <tool>clang-tidy</tool>

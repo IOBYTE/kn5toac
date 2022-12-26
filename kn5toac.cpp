@@ -1,6 +1,7 @@
 #include "kn5.h"
 #include "ini.h"
 #include "lut.h"
+#include "acd.h"
 
 #include <fstream>
 #include <filesystem>
@@ -9,10 +10,12 @@ static bool extract(kn5& model, const std::string& name, const kn5::Matrix& xfor
 {
     kn5::Node* transformNode = model.findNode(kn5::Node::Transform, name);
 
-    if (transformNode == nullptr || transformNode->m_children.size() != 1)
+    if (transformNode == nullptr)
         return false;
 
-    kn5::Node   node = transformNode->m_children[0];
+    kn5::Node   node = *transformNode;
+
+    node.m_matrix.makeIdentity();
 
     node.transform(xform);
 
@@ -34,26 +37,41 @@ static void remove(kn5& model, kn5::Node::NodeType type, const std::string& name
 
 static void writeConfig(const std::filesystem::path& inputPath, const std::string& filename, kn5& model, float length, float width, float height, const std::string& category)
 {
-    std::string inputPathString = inputPath.string();
+    std::string iniPathString = inputPath.string();
 
-    inputPathString += std::filesystem::path::preferred_separator;
+    iniPathString += std::filesystem::path::preferred_separator;
 
-    ini aero(inputPathString + "data/aero.ini");
-    ini brakes(inputPathString + "data/brakes.ini");
-    ini car(inputPathString + "data/car.ini");
-    ini colliders(inputPathString + "data/colliders.ini");
-    ini drivetrain(inputPathString + "data/drivetrain.ini");
+    std::filesystem::path acdPath = inputPath;
+
+    acdPath.append("data.acd");
+
+    if (std::filesystem::exists(acdPath))
+    {
+        acd data(acdPath.string());
+
+        std::filesystem::path outputDirectory = std::filesystem::path(filename).parent_path();
+
+        data.writeEntries(outputDirectory.string());
+
+        iniPathString = outputDirectory.string() += std::filesystem::path::preferred_separator;
+    }
+
+    ini aero(iniPathString + "data/aero.ini");
+    ini brakes(iniPathString + "data/brakes.ini");
+    ini car(iniPathString + "data/car.ini");
+    ini colliders(iniPathString + "data/colliders.ini");
+    ini drivetrain(iniPathString + "data/drivetrain.ini");
     ini electronics;
-    if (std::filesystem::exists(inputPathString + "data/electronics.ini"))
-        electronics.read(inputPathString + "data/electronics.ini");
-    ini engine(inputPathString + "data/engine.ini");
-    ini lods(inputPathString + "data/lods.ini");
+    if (std::filesystem::exists(iniPathString + "data/electronics.ini"))
+        electronics.read(iniPathString + "data/electronics.ini");
+    ini engine(iniPathString + "data/engine.ini");
+    ini lods(iniPathString + "data/lods.ini");
     ini flames;
-    if (std::filesystem::exists(inputPathString + "data/flames.ini"))
-        flames.read(inputPathString + "data/flames.ini");
-    ini setup(inputPathString + "data/setup.ini");
-    ini suspensions(inputPathString + "data/suspensions.ini");
-    ini tires(inputPathString + "data/tyres.ini");
+    if (std::filesystem::exists(iniPathString + "data/flames.ini"))
+        flames.read(iniPathString + "data/flames.ini");
+    ini setup(iniPathString + "data/setup.ini");
+    ini suspensions(iniPathString + "data/suspensions.ini");
+    ini tires(iniPathString + "data/tyres.ini");
 
     std::string modelFileName = inputPath.filename().string() + ".ac";
 
@@ -184,7 +202,7 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
 //	<attnum name="turbo lag" val="1.0"/>
 
     fout << "\t\t<section name=\"data points\">" << std::endl;
-    std::filesystem::path powerPath = inputPath;
+    std::filesystem::path powerPath = iniPathString;
     powerPath.append("data");
     powerPath.append(engine.getValue("HEADER", "POWER_CURVE"));
     lut power(powerPath.string());
@@ -706,6 +724,13 @@ int main(int argc, char* argv[])
             std::filesystem::path iniFilePath = inputPath;
 
             iniFilePath.append("data/brakes.ini");
+
+            if (!std::filesystem::exists(iniFilePath))
+            {
+                iniFilePath = outputPath;
+
+                iniFilePath.append("data/brakes.ini");
+            }
 
             const ini brakes(iniFilePath.string());
 

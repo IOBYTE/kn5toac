@@ -118,12 +118,12 @@ float ini::getFloatValue(const std::string& section, const std::string& key) con
 
 std::array<float, 3> ini::getFloatArray3Value(const std::string& section, const std::string& key) const
 {
-    std::array<float, 3>    vec3;
+    std::array<float, 3>    vec3{ 0, 0, 0 };
     std::istringstream ss(getValue(section, key));
     std::string number;
     size_t index = 0;
 
-    while (std::getline(ss, number, ','))
+    while (index < 3 && std::getline(ss, number, ','))
         vec3[index++] = std::stof(number);
 
     return vec3;

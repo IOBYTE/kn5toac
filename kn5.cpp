@@ -143,6 +143,11 @@ kn5::Matrix kn5::Matrix::multiply(const Matrix & matrix) const
     return dst;
 }
 
+void kn5::Matrix::makeIdentity()
+{
+    *this = Matrix();
+}
+
 std::string kn5::readString(std::istream& stream)
 {
     return readString(stream, readInt32(stream));
