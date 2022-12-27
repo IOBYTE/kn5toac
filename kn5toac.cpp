@@ -463,7 +463,7 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
 
 void usage()
 {
-    std::cout << "Usage: kn5toac -c category -i input_directory [-o output_directory]" << std::endl;
+    std::cout << "Usage: kn5toac -c category -i input_directory [-o output_directory] [-d] [-n filename]" << std::endl;
 }
 
 int main(int argc, char* argv[])
