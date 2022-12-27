@@ -225,7 +225,7 @@ public:
     void getUsedMaterials(const kn5::Node& node, std::set<int>& usedMaterialIDs) const;
     int getNewMaterialID(int materialID, const std::set<int>& usedMaterialIDs) const;
 
-    Node * kn5::findNode(Node& node, Node::NodeType type, const std::string& name);
+    Node * findNode(Node& node, Node::NodeType type, const std::string& name);
 
     int32_t                 m_version = 0;
     int32_t                 m_unknown = 0;
