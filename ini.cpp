@@ -1,27 +1,9 @@
 #include "ini.h"
+#include "trim.h"
 
 #include <iostream>
 #include <fstream>
 #include <sstream>
-
-static const std::string WHITESPACE = " \n\r\t\f\v";
-
-std::string ltrim(const std::string& s)
-{
-    const size_t start = s.find_first_not_of(WHITESPACE);
-    return (start == std::string::npos) ? "" : s.substr(start);
-}
-
-std::string rtrim(const std::string& s)
-{
-    const size_t end = s.find_last_not_of(WHITESPACE);
-    return (end == std::string::npos) ? "" : s.substr(0, end + 1);
-}
-
-std::string trim(const std::string& s)
-{
-    return rtrim(ltrim(s));
-}
 
 void ini::read(const std::string& fileName)
 {
@@ -30,11 +12,11 @@ void ini::read(const std::string& fileName)
     if (!stream)
         throw std::runtime_error("Couldn't open file: " + fileName);
 
-    char        line[256];
+    std::string line;
     size_t      lineNumber = 0;
     std::string currentSection;
 
-    while (stream.getline(line, sizeof(line)))
+    while (std::getline(stream, line))
     {
         lineNumber++;
 

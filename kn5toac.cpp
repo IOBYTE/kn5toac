@@ -472,16 +472,18 @@ int main(int argc, char* argv[])
     bool        dumpModel = false;
     bool        writeTextures = false;
     bool        convertToPNG = false;
-    bool        deleteDDS = false;
+    bool        deleteDDS = true;
     bool        outputACC = false;
     bool        useDiffuse = false;
     bool        extractCarParts = false;
     bool        writeCarConfig = false;
     bool        dumpCollider = false;
     bool        writeCmake = false;
+    bool        deleteData = true;
     std::string category;
     std::string inputDirectory;
     std::string outputDirectory;
+    std::string inputFileName;
 
     for (int i = 1; i < argc; i++)
     {
@@ -503,6 +505,8 @@ int main(int argc, char* argv[])
         {
             dumpModel = true;
             dumpCollider = true;
+            deleteData = false;
+            deleteDDS = false;
         }
         else if (arg == "-h")
         {
@@ -522,6 +526,19 @@ int main(int argc, char* argv[])
                 return EXIT_FAILURE;
             }
         }
+        else if (arg == "-n")
+        {
+            if (i < argc)
+            {
+                i++;
+                inputFileName = argv[i];
+            }
+            else
+            {
+                usage();
+                return EXIT_FAILURE;
+            }
+        }
         else if (arg == "-o")
         {
             if (i < argc)
@@ -530,7 +547,6 @@ int main(int argc, char* argv[])
                 outputDirectory = argv[i];
                 writeTextures = true;
                 convertToPNG = true;
-                deleteDDS = true;
                 writeModel = true;
                 extractCarParts = true;
                 writeCarConfig = true;
@@ -558,7 +574,8 @@ int main(int argc, char* argv[])
 
     outputPath.append(inputFileDirectoryName);
 
-    const std::string       inputFileName(inputFileDirectoryName + ".kn5");
+    if (inputFileName.empty())
+        inputFileName = inputFileDirectoryName + ".kn5";
 
     std::filesystem::path   inputFilePath(inputPath);
 
@@ -771,7 +788,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    if (writeCarConfig)
+    if (deleteData)
     {
         std::filesystem::path dataDirectory = outputPath;
 

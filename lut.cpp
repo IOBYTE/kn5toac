@@ -1,4 +1,5 @@
 #include "lut.h"
+#include "trim.h"
 
 #include <iostream>
 #include <fstream>
@@ -14,12 +15,14 @@ void lut::read(const std::string& fileName)
 
     while (std::getline(fin, line))
     {
-        if (!line.empty())
+        std::string trimmed = trim(line);
+
+        if (!trimmed.empty() && trimmed[0] != ';')
         {
-            const size_t seperator = line.find('|');
-            const float rpm = std::stof(line.substr(0, seperator));
-            const float tq = std::stof(line.substr(seperator + 1));
-            entries.push_back(std::make_pair(rpm, tq));
+            const size_t seperator = trimmed.find('|');
+            const float first = std::stof(trimmed.substr(0, seperator));
+            const float second = std::stof(trimmed.substr(seperator + 1));
+            entries.push_back(std::make_pair(first, second));
         }
     }
 
