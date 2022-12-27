@@ -49,7 +49,9 @@ void acd::read(const std::string& fileName)
 		entry.m_data.reserve(entry.m_rawData.size());
 		for (size_t i = 0; i < entry.m_rawData.size(); i++)
 		{
-			entry.m_data.push_back(static_cast<char>(entry.m_rawData[i]) - m_key[i % m_key.size()]);
+			char data = static_cast<char>(entry.m_rawData[i]) - m_key[i % m_key.size()];
+			if (data != '\r')
+				entry.m_data.push_back(data);
 		}
 
 		m_entries.emplace_back(entry);
