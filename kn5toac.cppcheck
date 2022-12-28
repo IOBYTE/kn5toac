@@ -24,6 +24,7 @@
         <suppression>clang-analyzer</suppression>
         <suppression>clang-tidy-bugprone-easily-swappable-parameters</suppression>
         <suppression>clang-tidy-misc-no-recursion</suppression>
+        <suppression>clang-tidy-abseil-string-find-str-contains</suppression>
     </suppressions>
     <tools>
         <tool>clang-tidy</tool>
