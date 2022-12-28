@@ -14,7 +14,7 @@ Asseto Corsa car models have wheels and the steering wheels included in the mode
 
 The converted Speed Dreams .acc files do not have multiple textures and triangle strips yet.
 
-The car xml config file is generated from the kn5, ini and lut files.  The ini files in the data.acd file are used when available.
+The car xml config file is generated from the kn5, ini and lut files.  The ini files in the data.acd file are used when available. The skins and previews are converted.
 
 The wheels can't be used without modifications.  The brake disks can't be used because they are created by Speed Dreams.  Reusing these unmodified from the original model will require changing the Speed Dreams loaders or writing a kn5 loader for osg and ssg.
 
