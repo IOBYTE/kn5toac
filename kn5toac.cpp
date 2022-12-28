@@ -880,7 +880,7 @@ int main(int argc, char* argv[])
 
                         liveryPreviewPath.append(inputFileDirectoryName + "-" + livery + "-preview.jpg");
 
-                        std::filesystem::copy(previewPath, liveryPreviewPath);
+                        std::filesystem::copy(previewPath, liveryPreviewPath, std::filesystem::copy_options::overwrite_existing);
                     }
                 }
             }

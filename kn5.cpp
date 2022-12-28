@@ -3,6 +3,7 @@
 #include <fstream>
 #include <filesystem>
 #include <algorithm>
+#include <list>
 
 int32_t kn5::readInt32(std::istream& stream)
 {
@@ -1019,20 +1020,66 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, const std::
             }
         }
 
-        fout << "numsurf " << (node.m_indices.size() / 3) << std::endl;
+        struct Surface
+        {
+            int m_materialID = 0;
+
+            struct Ref
+            {
+                int     m_index = 0;
+                Vec3    m_vertex = { 0, 0, 0 };
+                Vec2    m_uv = { 0, 0 };
+            };
+
+            std::array<Ref, 3>  m_refs;
+        };
+
+        std::list<Surface>  surfaces;
+
         for (size_t i = 0; i < node.m_indices.size(); i += 3)
         {
-            fout << "SURF 0x10" << std::endl;
-            fout << "mat " << getNewMaterialID(node.m_materialID, usedMaterialIDs) << std::endl;
-            fout << "refs 3" << std::endl;
+            Surface surface;
+
+            surface.m_materialID = getNewMaterialID(node.m_materialID, usedMaterialIDs);
+
             for (size_t j = 0; j < 3; j++)
             {
                 const int index = node.m_indices[i + j];
+
+                surface.m_refs[j].m_index = index;
+                surface.m_refs[j].m_vertex = node.m_vertices[index].m_position;
+
                 if (node.m_type == Node::Mesh)
-                    fout << index << " " << (node.m_vertices[index].m_texture[0] * uvMult) << " " << (-node.m_vertices[index].m_texture[1] * uvMult) << std::endl;
+                {
+                    surface.m_refs[j].m_uv[0] = node.m_vertices[index].m_texture[0] * uvMult;
+                    surface.m_refs[j].m_uv[1] = -node.m_vertices[index].m_texture[1] * uvMult;
+                }
                 else
-                    fout << index << " " << (node.m_anamatedVertices[index].m_texture[0] * uvMult) << " " << (-node.m_anamatedVertices[index].m_texture[1] * uvMult) << std::endl;
+                {
+                    surface.m_refs[j].m_uv[0] = node.m_anamatedVertices[index].m_texture[0] * uvMult;
+                    surface.m_refs[j].m_uv[1] = -node.m_anamatedVertices[index].m_texture[1] * uvMult;
+                }
             }
+
+            if (surface.m_refs[0].m_vertex == surface.m_refs[1].m_vertex ||
+                surface.m_refs[0].m_vertex == surface.m_refs[2].m_vertex ||
+                surface.m_refs[1].m_vertex == surface.m_refs[2].m_vertex)
+            {
+                //std::cerr << "found bad triangle" << std::endl;
+                continue;
+            }
+
+            surfaces.push_back(surface);
+        }
+
+        fout << "numsurf " << surfaces.size() << std::endl;
+        for (const auto& surface : surfaces)
+        {
+            fout << "SURF 0x10" << std::endl;
+            fout << "mat " << surface.m_materialID << std::endl;
+            fout << "refs 3" << std::endl;
+            for (const auto& ref : surface.m_refs)
+                fout << ref.m_index << " " << ref.m_uv[0] << " " << ref.m_uv[1] << std::endl;
         }
     }
     else
