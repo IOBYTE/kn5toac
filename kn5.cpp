@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <algorithm>
 #include <list>
+#include <limits>
 
 int32_t kn5::readInt32(std::istream& stream)
 {
@@ -1032,6 +1033,15 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, const std::
             };
 
             std::array<Ref, 3>  m_refs;
+
+            bool collinearVertices() const
+            {
+                constexpr float epsilon = std::numeric_limits<float>::epsilon();
+                Vec3 v = Vec3{ m_refs[1].m_vertex - m_refs[0].m_vertex }.cross(m_refs[2].m_vertex - m_refs[0].m_vertex);
+                return std::fabs(v[0]) < epsilon &&
+                       std::fabs(v[1]) < epsilon &&
+                       std::fabs(v[2]) < epsilon;
+            }
         };
 
         std::list<Surface>  surfaces;
@@ -1061,11 +1071,9 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, const std::
                 }
             }
 
-            if (surface.m_refs[0].m_vertex == surface.m_refs[1].m_vertex ||
-                surface.m_refs[0].m_vertex == surface.m_refs[2].m_vertex ||
-                surface.m_refs[1].m_vertex == surface.m_refs[2].m_vertex)
+            if (surface.collinearVertices())
             {
-                //std::cerr << "found bad triangle" << std::endl;
+                //std::cerr << "found collinear vertices" << std::endl;
                 continue;
             }
 

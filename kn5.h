@@ -38,6 +38,19 @@ public:
     {
         Vec3 transformPoint(const Matrix& matrix) const;
         Vec3 transformVector(const Matrix& matrix) const;
+
+        Vec3 operator - (const Vec3& other) const
+        {
+            return Vec3{ at(0) - other.at(0),
+                         at(1) - other.at(1),
+                         at(2) - other.at(2) };
+        }
+        Vec3 cross(const Vec3& other) const
+        {
+            return Vec3{ at(1) * other.at(2) - at(2) * other.at(1),
+                         at(2) * other.at(0) - at(0) * other.at(2),
+                         at(0) * other.at(1) - at(1) * other.at(0) };
+        }
     };
 
     struct Vec4 : public std::array<float, 4>
