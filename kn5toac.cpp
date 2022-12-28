@@ -429,9 +429,9 @@ namespace
 
         fout << "\t<section name=\"Front Right Brake\">" << std::endl;
         std::string nodeName = brakes.getValue("DISCS_GRAPHICS", "DISC_RF");
-        const kn5::Node* disk = model.findNode(kn5::Node::Transform, nodeName);
-        if (disk && disk->m_children.size() == 1 && disk->m_children[0].m_type == kn5::Node::Mesh)
-            fout << "\t\t<attnum name=\"disk diameter\" unit=\"m\" val=\"" << (disk->m_children[0].m_boundingSphere.m_radius * 2.0f) << "\"/>" << std::endl;
+        const kn5::Node* disk = model.findNode(kn5::Node::Mesh, nodeName);
+        if (disk)
+            fout << "\t\t<attnum name=\"disk diameter\" unit=\"m\" val=\"" << (disk->m_boundingSphere.m_radius * 2.0f) << "\"/>" << std::endl;
         //	<attnum name="piston area" unit="cm2" val="50"/>
         //	<attnum name="mu" val="0.45"/>
         //	<attnum name="inertia" unit="kg.m2" val="0.1241"/>
@@ -439,9 +439,9 @@ namespace
 
         fout << "\t<section name=\"Front Left Brake\">" << std::endl;
         nodeName = brakes.getValue("DISCS_GRAPHICS", "DISC_LF");
-        disk = model.findNode(kn5::Node::Transform, nodeName);
-        if (disk && disk->m_children.size() == 1 && disk->m_children[0].m_type == kn5::Node::Mesh)
-            fout << "\t\t<attnum name=\"disk diameter\" unit=\"m\" val=\"" << (disk->m_children[0].m_boundingSphere.m_radius * 2.0f) << "\"/>" << std::endl;
+        disk = model.findNode(kn5::Node::Mesh, nodeName);
+        if (disk)
+            fout << "\t\t<attnum name=\"disk diameter\" unit=\"m\" val=\"" << (disk->m_boundingSphere.m_radius * 2.0f) << "\"/>" << std::endl;
         //	<attnum name="piston area" unit="cm2" val="50"/>
         //	<attnum name="mu" val="0.45"/>
         //	<attnum name="inertia" unit="kg.m2" val="0.1241"/>
@@ -449,9 +449,9 @@ namespace
 
         fout << "\t<section name=\"Rear Right Brake\">" << std::endl;
         nodeName = brakes.getValue("DISCS_GRAPHICS", "DISC_RR");
-        disk = model.findNode(kn5::Node::Transform, nodeName);
-        if (disk && disk->m_children.size() == 1 && disk->m_children[0].m_type == kn5::Node::Mesh)
-            fout << "\t\t<attnum name=\"disk diameter\" unit=\"m\" val=\"" << (disk->m_children[0].m_boundingSphere.m_radius * 2.0f) << "\"/>" << std::endl;
+        disk = model.findNode(kn5::Node::Mesh, nodeName);
+        if (disk)
+            fout << "\t\t<attnum name=\"disk diameter\" unit=\"m\" val=\"" << (disk->m_boundingSphere.m_radius * 2.0f) << "\"/>" << std::endl;
         //	<attnum name="piston area" unit="cm2" val="50"/>
         //	<attnum name="mu" val="0.45"/>
         //	<attnum name="inertia" unit="kg.m2" val="0.1241"/>
@@ -459,9 +459,9 @@ namespace
 
         fout << "\t<section name=\"Rear Left Brake\">" << std::endl;
         nodeName = brakes.getValue("DISCS_GRAPHICS", "DISC_LR");
-        disk = model.findNode(kn5::Node::Transform, nodeName);
-        if (disk && disk->m_children.size() == 1 && disk->m_children[0].m_type == kn5::Node::Mesh)
-            fout << "\t\t<attnum name=\"disk diameter\" unit=\"m\" val=\"" << (disk->m_children[0].m_boundingSphere.m_radius * 2.0f) << "\"/>" << std::endl;
+        disk = model.findNode(kn5::Node::Mesh, nodeName);
+        if (disk)
+            fout << "\t\t<attnum name=\"disk diameter\" unit=\"m\" val=\"" << (disk->m_boundingSphere.m_radius * 2.0f) << "\"/>" << std::endl;
         //	<attnum name="piston area" unit="cm2" val="50"/>
         //	<attnum name="mu" val="0.45"/>
         //	<attnum name="inertia" unit="kg.m2" val="0.1241"/>
