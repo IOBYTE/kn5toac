@@ -6,6 +6,18 @@
 #include <list>
 #include <limits>
 
+namespace
+{
+    void quote(std::string& string)
+    {
+        if (string.find(' ') != std::string::npos)
+        {
+            string.insert(0, 1, '"');
+            string.append(1, '"');
+        }
+    }
+}
+
 int32_t kn5::readInt32(std::istream& stream)
 {
     int32_t value;
@@ -647,36 +659,38 @@ void kn5::writeTextures(const std::string& directory, bool convertToPNG, bool de
 
         texturePath.append(m_textures[i].m_name);
 
-        const std::string texture = texturePath.string();
+        std::string texturePathString = texturePath.string();
 
         if (!std::filesystem::exists(texturePath))
         {
             std::ofstream   fout(texturePath.string(), std::ios::binary);
 
             if (!fout)
-                throw std::runtime_error("Couldn't create texture: " + texture);
+                throw std::runtime_error("Couldn't create texture: " + texturePathString);
 
             fout.write(m_textures[i].m_data.data(), m_textures[i].m_data.size());
 
             fout.close();
         }
 
-        if (convertToPNG && (texture.find(".png") == std::string::npos && texture.find(".PNG") == std::string::npos))
+        if (convertToPNG && (texturePathString.find(".png") == std::string::npos && texturePathString.find(".PNG") == std::string::npos))
         {
             std::string png;
 
-            size_t extension = texture.find(".dds");
+            size_t extension = texturePathString.find(".dds");
 
             if (extension != std::string::npos)
-                png = texture.substr(0, extension) + ".png";
-            else if ((extension = texture.find(".DDS")) != std::string::npos)
-                png = texture.substr(0, extension) + ".png";
+                png = texturePathString.substr(0, extension) + ".png";
+            else if ((extension = texturePathString.find(".DDS")) != std::string::npos)
+                png = texturePathString.substr(0, extension) + ".png";
 
             if (!png.empty() && !std::filesystem::exists(png))
             {
-                filesToDelete.insert(texture);
+                filesToDelete.insert(texturePathString);
 
-                std::string command("magick convert " + texture + " ");
+                quote(texturePathString);
+
+                std::string command("magick convert " + texturePathString + " ");
 
                 for (const auto & material : m_materials)
                 {
@@ -691,10 +705,12 @@ void kn5::writeTextures(const std::string& directory, bool convertToPNG, bool de
                     }
                 }
 
+                quote(png);
+
                 command += png;
 
-                if (system(command.c_str()) == -1)
-                    std::cerr << "failed to convert " << texture << " to " << png << std::endl;
+                if (system(command.c_str()) != 0)
+                    std::cerr << "failed to convert " << texturePathString << " to " << png << std::endl;
             }
         }
     }

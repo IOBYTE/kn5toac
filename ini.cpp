@@ -43,7 +43,10 @@ void ini::read(const std::string& fileName)
             const size_t equal = trimmed.find_first_of('=');
 
             if (equal == std::string::npos)
-                throw std::runtime_error("Couldn't parse file: " + fileName + " line : " + std::to_string(lineNumber));
+            {
+                continue;
+                // throw std::runtime_error("Couldn't parse file: " + fileName + " line : " + std::to_string(lineNumber));
+            }
 
             const std::string key = rtrim(trimmed.substr(0, equal));
             std::string value = ltrim(trimmed.substr(equal + 1));
