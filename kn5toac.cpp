@@ -277,15 +277,19 @@ namespace
 
         float wheelbase = suspensions.getFloatValue("BASIC", "WHEELBASE");
         float cg = suspensions.getFloatValue("BASIC", "CG_LOCATION");
+        std::array<float, 3> graphicsCorrection = car.getFloatArray3Value("BASIC", "GRAPHICS_OFFSET");
+        float xpos = ((wheelbase * (1 - cg)) - graphicsCorrection[2]);
 
         fout << "\t<section name=\"Front Axle\">" << std::endl;
-        fout << "\t\t<attnum name=\"xpos\" val=\"" << (wheelbase * cg) << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"xpos\" val=\"" << xpos << "\"/>" << std::endl;
         //	<attnum name="inertia" unit="kg.m2" val="0.0056"/>
         //	<attnum name="roll center height" unit="m" min="0" max="0.5" val="0.11"/>
         fout << "\t</section>" << std::endl;
 
+        xpos = (-cg * wheelbase) - graphicsCorrection[2];
+
         fout << "\t<section name=\"Rear Axle\">" << std::endl;
-        fout << "\t\t<attnum name=\"xpos\" val=\"" << ((cg - 1) * wheelbase) << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"xpos\" val=\"" << xpos << "\"/>" << std::endl;
         //	<attnum name="inertia" unit="kg.m2" val="0.0080"/>
         //	<attnum name="roll center height" unit="m" min="0" max="0.5" val="0.14"/>
         fout << "\t</section>" << std::endl;
