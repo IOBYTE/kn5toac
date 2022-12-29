@@ -1073,15 +1073,16 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, const std::
                 const int index = node.m_indices[i + j];
 
                 surface.m_refs[j].m_index = index;
-                surface.m_refs[j].m_vertex = node.m_vertices[index].m_position;
 
                 if (node.m_type == Node::Mesh)
                 {
+                    surface.m_refs[j].m_vertex = node.m_vertices[index].m_position;
                     surface.m_refs[j].m_uv[0] = node.m_vertices[index].m_texture[0] * uvMult;
                     surface.m_refs[j].m_uv[1] = -node.m_vertices[index].m_texture[1] * uvMult;
                 }
                 else
                 {
+                    surface.m_refs[j].m_vertex = node.m_anamatedVertices[index].m_position;
                     surface.m_refs[j].m_uv[0] = node.m_anamatedVertices[index].m_texture[0] * uvMult;
                     surface.m_refs[j].m_uv[1] = -node.m_anamatedVertices[index].m_texture[1] * uvMult;
                 }
