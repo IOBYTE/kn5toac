@@ -66,18 +66,13 @@ void acd::writeEntries(const std::string& directory) const
 {
 	std::filesystem::path	dataDirectory(directory);
 
-	dataDirectory.append("data");
-
-	if (!std::filesystem::exists(dataDirectory))
-		std::filesystem::create_directory(dataDirectory);
-
 	for (const auto& entry : m_entries)
 	{
-		std::filesystem::path	file = dataDirectory;
+		std::filesystem::path	iniFilePath = dataDirectory;
 
-		file.append(entry.m_name);
+		iniFilePath.append(entry.m_name);
 
-		std::ofstream	fout(file.string());
+		std::ofstream	fout(iniFilePath.string());
 
 		if (fout)
 			fout.write(entry.m_data.data(), entry.m_data.size());

@@ -151,6 +151,7 @@ public:
         void dump(std::ostream& stream, const std::string& indent = "") const;
         const ShaderProperty* findShaderProperty(const std::string& name) const;
         const TextureMapping* findTextureMapping(const std::string& name) const;
+        TextureMapping* findTextureMapping(const std::string& name);
     };
 
     struct Node
@@ -239,6 +240,7 @@ public:
     int getNewMaterialID(int materialID, const std::set<int>& usedMaterialIDs) const;
 
     Node * findNode(Node& node, Node::NodeType type, const std::string& name);
+    const Node* findNode(const Node& node, Node::NodeType type, const std::string& name) const;
 
     int32_t                 m_version = 0;
     int32_t                 m_unknown = 0;
@@ -253,7 +255,8 @@ public:
     void transform(const Matrix& matrix);
     void transform(Node &node, const Matrix& matrix);
     void removeEmptyNodes();
-    Node * findNode(Node::NodeType type, const std::string& name);
+    Node* findNode(Node::NodeType type, const std::string& name);
+    const Node* findNode(Node::NodeType type, const std::string& name) const;
     void writeTextures(const std::string& directory, bool convertToPNG, bool deleteDDS) const;
     void writeAc3d(const std::string& file, bool convertToPNG, bool outputACC, bool useDiffuse) const;
     void writeAc3d(const std::string& file, const Node& node, bool convertToPNG, bool outputACC, bool useDiffuse) const;

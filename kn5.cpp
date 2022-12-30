@@ -296,6 +296,17 @@ const kn5::TextureMapping* kn5::Material::findTextureMapping(const std::string& 
     return nullptr;
 }
 
+kn5::TextureMapping* kn5::Material::findTextureMapping(const std::string& name)
+{
+    for (size_t i = 0; i < m_textureMappings.size(); i++)
+    {
+        if (m_textureMappings[i].m_name == name)
+            return &m_textureMappings[i];
+    }
+
+    return nullptr;
+}
+
 const kn5::ShaderProperty* kn5::Material::findShaderProperty(const std::string& name) const
 {
     for (size_t i = 0; i < m_shaderProperties.size(); i++)
@@ -807,6 +818,27 @@ kn5::Node* kn5::findNode(Node &node, Node::NodeType type, const std::string& nam
 }
 
 kn5::Node* kn5::findNode(Node::NodeType type, const std::string& name)
+{
+    return findNode(m_node, type, name);
+}
+
+const kn5::Node* kn5::findNode(const Node& node, Node::NodeType type, const std::string& name) const
+{
+    if (node.m_type == type && node.m_name == name)
+        return &node;
+
+    for (const auto& child : node.m_children)
+    {
+        const Node* found = findNode(child, type, name);
+
+        if (found)
+            return found;
+    }
+
+    return nullptr;
+}
+
+const kn5::Node* kn5::findNode(Node::NodeType type, const std::string& name) const
 {
     return findNode(m_node, type, name);
 }

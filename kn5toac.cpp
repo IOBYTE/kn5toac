@@ -46,45 +46,26 @@ namespace
             node->m_parent->removeChild(node);
     }
 
-    void writeConfig(const std::filesystem::path& inputPath, const std::string& filename, kn5& model, float length, float width, float height, const std::string& category)
+    void writeConfig(const std::filesystem::path& inputPath, const std::string& dataDirectoryPath, const std::string& filename, const kn5& model, float length, float width, float height, const std::string& category, bool outputACC)
     {
-        std::string iniPathString = inputPath.string();
+        //ini aero(std::filesystem::path(dataDirectoryPath).append("aero.ini").string());
+        ini brakes(std::filesystem::path(dataDirectoryPath).append("brakes.ini").string());
+        ini car(std::filesystem::path(dataDirectoryPath).append("car.ini").string());
+        //ini colliders(std::filesystem::path(dataDirectoryPath).append("colliders.ini").string());
+        ini drivetrain(std::filesystem::path(dataDirectoryPath).append("drivetrain.ini").string());
+        //ini electronics;
+        //if (std::filesystem::exists(std::filesystem::path(dataDirectoryPath).append("electronics.ini").string()))
+        //    electronics.read(std::filesystem::path(dataDirectoryPath).append("electronics.ini").string());
+        ini engine(std::filesystem::path(dataDirectoryPath).append("engine.ini").string());
+        ini lods(std::filesystem::path(dataDirectoryPath).append("lods.ini").string());
+        //ini flames;
+        //if (std::filesystem::exists(std::filesystem::path(dataDirectoryPath).append("flames.ini").string()))
+        //    flames.read(std::filesystem::path(dataDirectoryPath).append("flames.ini").string());
+        //ini setup(std::filesystem::path(dataDirectoryPath).append("setup.ini").string());
+        ini suspensions(std::filesystem::path(dataDirectoryPath).append("suspensions.ini").string());
+        ini tires(std::filesystem::path(dataDirectoryPath).append("tyres.ini").string());
 
-        iniPathString += std::filesystem::path::preferred_separator;
-
-        std::filesystem::path acdPath = inputPath;
-
-        acdPath.append("data.acd");
-
-        if (std::filesystem::exists(acdPath))
-        {
-            acd data(acdPath.string());
-
-            std::filesystem::path outputDirectory = std::filesystem::path(filename).parent_path();
-
-            data.writeEntries(outputDirectory.string());
-
-            iniPathString = outputDirectory.string() += std::filesystem::path::preferred_separator;
-        }
-
-        ini aero(iniPathString + "data/aero.ini");
-        ini brakes(iniPathString + "data/brakes.ini");
-        ini car(iniPathString + "data/car.ini");
-        ini colliders(iniPathString + "data/colliders.ini");
-        ini drivetrain(iniPathString + "data/drivetrain.ini");
-        ini electronics;
-        if (std::filesystem::exists(iniPathString + "data/electronics.ini"))
-            electronics.read(iniPathString + "data/electronics.ini");
-        ini engine(iniPathString + "data/engine.ini");
-        ini lods(iniPathString + "data/lods.ini");
-        ini flames;
-        if (std::filesystem::exists(iniPathString + "data/flames.ini"))
-            flames.read(iniPathString + "data/flames.ini");
-        ini setup(iniPathString + "data/setup.ini");
-        ini suspensions(iniPathString + "data/suspensions.ini");
-        ini tires(iniPathString + "data/tyres.ini");
-
-        std::string modelFileName = inputPath.filename().string() + ".ac";
+        std::string modelFileName = inputPath.filename().string() + (outputACC ? ".acc" : ".ac");
 
         std::ofstream   fout(filename);
 
@@ -138,7 +119,7 @@ namespace
         fout << "\t\t\t<attstr name=\"model\" val=\"steer.acc\"/>" << std::endl;
         fout << "\t\t\t<attstr name=\"hi res model\" val=\"histeer.acc\"/>" << std::endl;
         kn5::Vec3   steer = { 0, 0, 0 };
-        kn5::Node* steerNode = model.findNode(kn5::Node::Transform, "STEER_LR");
+        const kn5::Node* steerNode = model.findNode(kn5::Node::Transform, "STEER_LR");
 
         if (steerNode)
         {
@@ -213,8 +194,7 @@ namespace
         //	<attnum name="turbo lag" val="1.0"/>
 
         fout << "\t\t<section name=\"data points\">" << std::endl;
-        std::filesystem::path powerPath = iniPathString;
-        powerPath.append("data");
+        std::filesystem::path powerPath = dataDirectoryPath;
         powerPath.append(engine.getValue("HEADER", "POWER_CURVE"));
         lut power(powerPath.string());
         const std::vector<std::pair<float, float>>& values = power.getValues();
@@ -612,8 +592,123 @@ int main(int argc, char* argv[])
 
     outputPath.append(inputFileDirectoryName);
 
+    // create the output directory if it doesn't exixt
+    if (!std::filesystem::exists(outputPath))
+    {
+        if (!std::filesystem::create_directory(outputPath))
+        {
+            std::cerr << "Couldn't create: " << outputPath.string() << std::endl;
+            return EXIT_FAILURE;
+        }
+    }
+
+    // use the data directory in the input directory if it exists
+    std::filesystem::path   dataDirectoryPath = inputPath;
+
+    dataDirectoryPath.append("data");
+
+    if (!std::filesystem::exists(dataDirectoryPath))
+    {
+        // otherwise use the data.acd file
+        std::filesystem::path acdPath = inputPath;
+
+        acdPath.append("data.acd");
+
+        if (std::filesystem::exists(acdPath))
+        {
+            acd data(acdPath.string());
+
+            dataDirectoryPath = outputPath;
+
+            dataDirectoryPath.append("data");
+
+            if (!std::filesystem::exists(dataDirectoryPath))
+                std::filesystem::create_directory(dataDirectoryPath);
+
+            // write the ini files to the output data directory
+            data.writeEntries(dataDirectoryPath.string());
+        }
+    }
+
     if (inputFileName.empty())
         inputFileName = inputFileDirectoryName + ".kn5";
+
+    // textures are only in lod 0 file
+    std::filesystem::path   lodFilePath(dataDirectoryPath);
+
+    lodFilePath.append("lods.ini");
+
+    ini lods(lodFilePath.string());
+
+    std::string lod0FileName = lods.getValue("LOD_0", "FILE");
+
+    kn5 lod0model;
+
+    if (inputFileName != lod0FileName)
+    {
+        // get the textures from lod 0
+        std::filesystem::path   lod0FilePath = inputPath;
+
+        lod0FilePath.append(lod0FileName);
+
+        std::string lod0FilePathString = lod0FilePath.string();
+
+        try
+        {
+            lod0model.read(lod0FilePathString);
+        }
+        catch (std::ifstream::failure& e)
+        {
+            std::cerr << "Error reading: " << lod0FilePathString << " : " << e.code().message() << std::endl;
+            return EXIT_FAILURE;
+        }
+        catch (std::runtime_error& e)
+        {
+            std::cerr << "Error reading: " << lod0FilePathString << " : " << e.what() << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        // rename skin texture
+        if (!skinFileName.empty())
+        {
+            for (auto& material : lod0model.m_materials)
+            {
+                kn5::TextureMapping* txDiffuse = material.findTextureMapping("txDiffuse");
+
+                if (txDiffuse && txDiffuse->m_textureName == skinFileName)
+                {
+                    size_t extension = skinFileName.find('.');
+
+                    if (extension != std::string::npos)
+                    {
+                        txDiffuse->m_textureName = inputFileDirectoryName + skinFileName.substr(extension);
+
+                        for (auto& texture : lod0model.m_textures)
+                        {
+                            if (texture.m_name == skinFileName)
+                                texture.m_name = txDiffuse->m_textureName;
+                        }
+                    }
+                }
+            }
+        }
+
+        lod0model.writeTextures(outputPath.string(), true, true);
+
+        if (dumpModel)
+        {
+            std::filesystem::path dumpFilePath = outputPath;
+
+            dumpFilePath.append(lod0FileName + ".dump");
+
+            std::ofstream of(dumpFilePath.string());
+
+            if (of)
+                lod0model.dump(of);
+
+            of.close();
+        }
+    }
 
     std::filesystem::path   inputFilePath(inputPath);
 
@@ -634,15 +729,6 @@ int main(int argc, char* argv[])
     {
         std::cerr << "Error reading: " << inputFilePath.string() << " : " << e.what() << std::endl;
         return EXIT_FAILURE;
-    }
-
-    if (!std::filesystem::exists(outputPath))
-    {
-        if (!std::filesystem::create_directory(outputPath))
-        {
-            std::cerr << "Couldn't create: " << outputPath.string() << std::endl;
-            return EXIT_FAILURE;
-        }
     }
 
     if (dumpModel)
@@ -724,7 +810,7 @@ int main(int argc, char* argv[])
 
         try
         {
-            writeConfig(inputPath, configFilePath.string(), model, length, width, height, category);
+            writeConfig(inputPath, dataDirectoryPath.string(), configFilePath.string(), inputFileName != lod0FileName ? lod0model : model, length, width, height, category, outputACC);
         }
         catch (std::runtime_error& e)
         {
@@ -763,29 +849,35 @@ int main(int argc, char* argv[])
 
             extractFilePath.append("steer.acc");
 
-            extract(model, "STEER_LR", xform, extractFilePath.string());
+            // get steering wheel from lod 0 model
+            if (inputFileName != lod0FileName)
+            {
+                extract(lod0model, "STEER_LR", xform, extractFilePath.string());
+                remove(model, kn5::Node::Transform, "STEER_LR");
+            }
+            else
+                extract(model, "STEER_LR", xform, extractFilePath.string());
 
             extractFilePath = outputPath;
 
             extractFilePath.append("histeer.acc");
 
-            extract(model, "STEER_HR", xform, extractFilePath.string());
+            if (inputFileName != lod0FileName)
+            {
+                extract(lod0model, "STEER_HR", xform, extractFilePath.string());
+                remove(model, kn5::Node::Transform, "STEER_HR");
+            }
+            else
+                extract(model, "STEER_HR", xform, extractFilePath.string());
 
             remove(model, kn5::Node::Transform, "WHEEL_RF");
             remove(model, kn5::Node::Transform, "WHEEL_LF");
             remove(model, kn5::Node::Transform, "WHEEL_RR");
             remove(model, kn5::Node::Transform, "WHEEL_LR");
 
-            std::filesystem::path iniFilePath = inputPath;
+            std::filesystem::path iniFilePath = dataDirectoryPath;
 
-            iniFilePath.append("data/brakes.ini");
-
-            if (!std::filesystem::exists(iniFilePath))
-            {
-                iniFilePath = outputPath;
-
-                iniFilePath.append("data/brakes.ini");
-            }
+            iniFilePath.append("brakes.ini");
 
             const ini brakes(iniFilePath.string());
 
