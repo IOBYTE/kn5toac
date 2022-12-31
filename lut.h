@@ -8,7 +8,7 @@
 class lut
 {
 private:
-    std::vector<std::pair<float,float>> entries;
+    std::vector<std::pair<float,float>> m_entries;
 
 public:
     lut() = default;
@@ -21,8 +21,9 @@ public:
     void dump() const;
     const std::vector<std::pair<float, float>>& getValues() const
     {
-        return entries;
+        return m_entries;
     }
+    float lookup(float first) const;
 };
 
 #endif

@@ -171,16 +171,7 @@ namespace
             {
                 lut cdLut(cdLutFilePath.string());
 
-                std::vector<std::pair<float, float>> entries = cdLut.getValues();
-
-                for (size_t i = 0; i < entries.size(); i++)
-                {
-                    if (entries[i].first == 0)
-                    {
-                        fout << "\t\t<attnum name=\"Cx\" val=\"" << entries[i].second << "\"/>" << std::endl;
-                        break;
-                    }
-                }
+                fout << "\t\t<attnum name=\"Cx\" val=\"" << cdLut.lookup(0) << "\"/>" << std::endl;
             }
 
             fout << "\t\t<attnum name=\"front area\" unit=\"m2\" val=\"" << (aero.getFloatValue("WING_0", "CHORD") * aero.getFloatValue("WING_0", "SPAN")) << "\"/>" << std::endl;
@@ -197,15 +188,10 @@ namespace
 
                 std::vector<std::pair<float, float>> entries = clLut.getValues();
 
-                for (size_t i = 0; i < entries.size(); i++)
-                {
-                    if (entries[i].first == 0)
-                    {
-                        fout << "\t\t<attnum name=\"front Clift\" min=\"0.0\" max=\"1.0\" val=\"" << entries[i].second << "\"/>" << std::endl;
-                        fout << "\t\t<attnum name=\"rear Clift\" min=\"0.0\" max=\"1.0\" val=\"" << entries[i].second << "\"/>" << std::endl;
-                        break;
-                    }
-                }
+                float value = clLut.lookup(0);
+
+                fout << "\t\t<attnum name=\"front Clift\" min=\"0.0\" max=\"1.0\" val=\"" << value << "\"/>" << std::endl;
+                fout << "\t\t<attnum name=\"rear Clift\" min=\"0.0\" max=\"1.0\" val=\"" << value << "\"/>" << std::endl;
             }
         }
         fout << "\t</section>" << std::endl;
