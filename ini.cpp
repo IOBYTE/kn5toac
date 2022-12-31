@@ -113,3 +113,8 @@ std::array<float, 3> ini::getFloatArray3Value(const std::string& section, const 
 
     return vec3;
 }
+
+bool ini::hasSection(const std::string& section) const
+{
+    return sections.find(section) != sections.end();
+}

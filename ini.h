@@ -23,6 +23,7 @@ public:
     int getIntValue(const std::string& section, const std::string& key) const;
     float getFloatValue(const std::string& section, const std::string& key) const;
     std::array<float,3> getFloatArray3Value(const std::string& section, const std::string& key) const;
+    bool hasSection(const std::string& section) const;
 };
 
 #endif

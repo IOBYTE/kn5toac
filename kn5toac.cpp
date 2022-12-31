@@ -75,7 +75,21 @@ namespace
         fout << "<?xml version=\"1.0\"?>" << std::endl;
         fout << "<!DOCTYPE params SYSTEM \"../../../../src/libs/tgf/params.dtd\">" << std::endl;
 
+        //---------------------------------------------------------------------
+
         fout << "<params name=\"" << car.getValue("INFO", "SCREEN_NAME") << "\" type=\"template\">" << std::endl;
+
+        //---------------------------------------------------------------------
+
+        fout << "\t<section name=\"Features\">" << std::endl;
+        //fout << "\t\t<attstr name=\"shifting aero coordinate\" in=\"yes\" val=\"" << "yes" << "\"/>>" << std::endl;
+        //fout << "\t\t<attstr name=\"tire temperature and degradation\" in=\"yes\" val=\"" << "yes" << "\"/>>" << std::endl;
+        //fout << "\t\t<attstr name=\"enable abs\" in=\"yes\" val=\"" << "yes" << "\"/>>" << std::endl;
+        //fout << "\t\t<attstr name=\"enable tcl\" in=\"yes\" val=\"" << "yes" << "\"/>>" << std::endl;
+        //fout << "\t\t<attstr name=\"enable esp\" in=\"yes\" val=\"" << "yes" << "\"/>>" << std::endl;
+        fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Bonnet\">" << std::endl;
         std::array<float, 3> bonnet = car.getFloatArray3Value("GRAPHICS", "BONNET_CAMERA_POS");
@@ -84,6 +98,8 @@ namespace
         fout << "\t\t<attnum name=\"zpos\" unit=\"m\" val=\"" << bonnet[1] << "\"/>" << std::endl;
         fout << "\t</section>" << std::endl;
 
+        //---------------------------------------------------------------------
+
         fout << "\t<section name=\"Driver\">" << std::endl;
         std::array<float, 3> driverEyes = car.getFloatArray3Value("GRAPHICS", "DRIVEREYES");
         fout << "\t\t<attnum name=\"xpos\" unit=\"m\" val=\"" << driverEyes[2] << "\"/>" << std::endl;
@@ -91,26 +107,34 @@ namespace
         fout << "\t\t<attnum name=\"zpos\" unit=\"m\" val=\"" << driverEyes[1] << "\"/>" << std::endl;
         fout << "\t</section>" << std::endl;
 
+        //---------------------------------------------------------------------
+
         fout << "\t<section name=\"Sound\">" << std::endl;
         //	<attstr name="engine sample" val="aichiv10.wav"/>
         //	<attnum name="rpm	scale" val="0.37"/>
         fout << "\t</section>" << std::endl;
 
+        //---------------------------------------------------------------------
+
         fout << "\t<section name=\"Graphic Objects\">" << std::endl;
         fout << "\t\t<attstr name=\"env\" val=\"" << modelFileName << "\"/>" << std::endl;
-        //	<attstr name="wheel texture"	val="tex-wheel.rgb"/>
-        //	<attstr name="shadow	texture" val="shadow.rgb"/>
-        //	<attstr name="tachometer	texture" val="rpm20000.rgb"/>
-        //	<attnum name="tachometer	min	value" val="0" unit="rpm"/>
-        //	<attnum name="tachometer	max	value" val="20000" unit="rpm"/>
-        //	<attstr name="speedometer texture" val="speed360.rgb"/>
-        //	<attnum name="speedometer min value"	val="0"	unit="km/h"/>
-        //	<attnum name="speedometer max value"	val="360" unit="km/h"/>
+        // fout << "\t\t<attstr name=\"wheel texture\" val=\"" << "tex-wheel.png" << "\"/>" << std::endl;
+        // fout << "\t\t<attstr name=\"shadow texture\" val=\"" << "shadow.png" << "\"/>" << std::endl;
+        // fout << "\t\t<attstr name=\"tachometer texture\" val=\"" << "rpm20000.png" << "\"/>" << std::endl;
+        // fout << "\t\t<attnum name=\"tachometer min value\" val=\"" << 0 << " unit=\"rpm\"\"/>" << std::endl;
+        // fout << "\t\t<attnum name=\"tachometer max value\" val=\"" << 20000 << " unit=\"rpm\"\"/>" << std::endl;
+        // fout << "\t\t<attstr name=\"speedometer texture\" val=\"" << "speed360.png" << "\"/>" << std::endl;
+        // fout << "\t\t<attnum name=\"speedometer min value\" val=\"" << 0 << " unit=\"km/h\"\"/>" << std::endl;
+        // fout << "\t\t<attnum name=\"speedometer max value\" val=\"" << 360<< " unit=\"km/h\"\"/>" << std::endl;
+        // fout << "\t\t<attnum name=\"needle red\" val=\"" << 0.95 << "\"/>" << std::endl;
+        // fout << "\t\t<attnum name=\"needle green\" val=\"" << 0.95 << "\"/>" << std::endl;
+        // fout << "\t\t<attnum name=\"needle blue\" val=\"" << 0.95 << "\"/>" << std::endl;
+        // fout << "\t\t<attnum name=\"needle alpha\" val=\"" << 1 << "\"/>" << std::endl;
         fout << "\t\t<section name=\"Ranges\">" << std::endl;
         fout << "\t\t\t<section name=\"1\">" << std::endl;
-        fout << "\t\t\t\t<attnum name=\"threshold\" val=\"0\"/>" << std::endl;
+        fout << "\t\t\t\t<attnum name=\"threshold\" val=\"" << 0 << "\"/>" << std::endl;
         fout << "\t\t\t\t<attstr name=\"car\" val=\"" << modelFileName << "\"/>" << std::endl;
-        //    fout << "\t\t\t\t<attstr name=\"wheels\" val=\"yes\"/>" << std::endl;
+        // fout << "\t\t\t\t<attstr name=\"wheels\" val=\"yes\"/>" << std::endl;
         fout << "\t\t\t</section>" << std::endl;
         fout << "\t\t</section>" << std::endl;
         fout << "\t\t<section name=\"Light\">" << std::endl;
@@ -137,6 +161,8 @@ namespace
         fout << "\t\t</section>" << std::endl;
         fout << "\t</section>" << std::endl;
 
+        //---------------------------------------------------------------------
+
         fout << "\t<section name=\"Car\">" << std::endl;
         fout << "\t\t<attstr name=\"category\" val=\"" << category << "\"/>" << std::endl;
         //    fout << "\t\t<attnum name=\"body length\" unit=\"m\" val=\"" << 4.86 << "\"/>" << std::endl;
@@ -154,9 +180,13 @@ namespace
         fout << "\t\t<attnum name=\"initial fuel\" unit=\"l\" min=\"1.0\" max=\"" << car.getValue("FUEL", "MAX_FUEL") << "\" val=\"" << car.getValue("FUEL", "FUEL") << "\"/>" << std::endl;
         fout << "\t</section>" << std::endl;
 
+        //---------------------------------------------------------------------
+
         fout << "\t<section name=\"Exhaust\">" << std::endl;
         //	<attnum name="power" val="1.5"/>
         fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Aerodynamics\">" << std::endl;
         if (aero.getValue("WING_0", "NAME") == "BODY")
@@ -201,12 +231,16 @@ namespace
         }
         fout << "\t</section>" << std::endl;
 
+        //---------------------------------------------------------------------
+
         fout << "\t<section name=\"Front Wing\">" << std::endl;
         //	<attnum name="area" unit="m2" val="0.23"/>
         //	<attnum name="angle" unit="deg" min="0" max="12" val="7"/>
         //	<attnum name="xpos" unit="m" val="2.23"/>
         //	<attnum name="zpos" unit="m" val="0.05"/>
         fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Rear Wing\">" << std::endl;
         //	<attnum name="area" unit="m2" val="0.68"/>
@@ -215,73 +249,100 @@ namespace
         //	<attnum name="zpos" unit="m" val="0.95"/>
         fout << "\t</section>" << std::endl;
 
+        //---------------------------------------------------------------------
+
         fout << "\t<section name=\"Engine\">" << std::endl;
         //	<attnum name="capacity" unit="l" val="3.6"/>
         //	<attnum name="cylinders" val="6"/>
         //	<attstr name="shape" in="v,l,h,w" val="h"/>
         //	<attstr name="position" in="front,front-mid,mid,rear-mid,rear," val="rear"/>
-        //	fout << "\t\t<attnum name=\"revs maxi\" unit=\"rpm\" min=\"5000\" max=\"10000\" val=\"" << ? << "\"/>" << std::endl;
-        fout << "\t\t<attnum name=\"revs limiter\" unit=\"rpm\" val=\"" << engine.getValue("ENGINE_DATA", "LIMITER") << "\"/>" << std::endl;
-        //	<attnum name="tickover" unit="rpm" min="900" max="3000" val="1500"/>
-        //	<attnum name="fuel cons factor" min="1.1" max="1.3" val="1.13"/>
-        //	<attstr name="turbo" val="true"/>
-        //	<attnum name="turbo rpm" unit="rpm" val="3000"/>
-        //	<attnum name="turbo factor" val="1.0"/>
-        //	<attnum name="turbo lag" val="1.0"/>
-
-        fout << "\t\t<section name=\"data points\">" << std::endl;
         std::filesystem::path powerPath = dataDirectoryPath;
         powerPath.append(engine.getValue("HEADER", "POWER_CURVE"));
         lut power(powerPath.string());
         const std::vector<std::pair<float, float>>& values = power.getValues();
+        fout << "\t\t<attnum name=\"revs maxi\" unit=\"rpm\" min=\"5000\" max=\"10000\" val=\"" << values[values.size() - 1].first << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"revs limiter\" unit=\"rpm\" val=\"" << engine.getValue("ENGINE_DATA", "LIMITER") << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"tickover\" unit=\"rpm\" val=\"" << engine.getValue("ENGINE_DATA", "MINIMUM") << "\"/>" << std::endl;
+        //	<attnum name="fuel cons factor" min="1.1" max="1.3" val="1.13"/>
+		//  <attnum name="brake linear coefficient" val="0.04"/>
+		//  <attnum name="brake coefficient" val="0.04"/>
+		fout << "\t\t<attnum name=\"inertia\" unit=\"kg.m2\" val=\"" << engine.getValue("ENGINE_DATA", "INERTIA") << "\"/>" << std::endl;
+        if (engine.hasSection("TURBO_0"))
+        {
+            fout << "\t\t<attstr name=\"turbo\" val=\"true\"/>" << std::endl;
+            fout << "\t\t<attnum name=\"turbo rpm\" unit=\"rpm\" val=\"" << engine.getValue("TURBO_0", "REFERENCE_RPM")<< "\"/>" << std::endl;
+            fout << "\t\t<attnum name=\"turbo lag\" val=\"" << engine.getValue("TURBO_0", "LAG_UP") << "\"/>" << std::endl;
+            //	<attnum name="turbo factor" val="1.0"/>
+        }
+        else
+            fout << "\t\t<attstr name=\"turbo\" val=\"false\"/>" << std::endl;
+
+        //  <attnum name="enable tcl" min="0" max="1" val="1" / >
+
+        fout << "\t\t<section name=\"data points\">" << std::endl;
+        size_t count = 0;
         for (size_t i = 0; i < values.size(); i++)
         {
             // TODO this is torque at wheels
-            fout << "\t\t\t<section name=\"" << (i + 1) << "\">" << std::endl;
-            fout << "\t\t\t\t<attnum name=\"rpm\" unit=\"rpm\" val=\"" << values[i].first << "\"/>" << std::endl;
-            fout << "\t\t\t\t<attnum name=\"Tq\" unit=\"N.m\" val=\"" << values[i].second << "\"/>" << std::endl;
-            fout << "\t\t\t</section>" << std::endl;
+            if (values[i].first >= 0)
+            {
+                fout << "\t\t\t<section name=\"" << (count + 1) << "\">" << std::endl;
+                fout << "\t\t\t\t<attnum name=\"rpm\" unit=\"rpm\" val=\"" << values[i].first << "\"/>" << std::endl;
+                fout << "\t\t\t\t<attnum name=\"Tq\" unit=\"N.m\" val=\"" << values[i].second << "\"/>" << std::endl;
+                fout << "\t\t\t</section>" << std::endl;
+                count++;
+            }
         }
         fout << "\t\t</section>" << std::endl;
         fout << "\t</section>" << std::endl;
 
+        //---------------------------------------------------------------------
+
         fout << "\t<section name=\"Clutch\">" << std::endl;
-        //	<attnum name="inertia" unit="kg.m2" val="0.1150"/>
+        //  fout << "\t\t<attnum name=\"inertia\" unit=\"kg.m2\" val=\"" << 0.1150<< "\"/>" << std::endl;
         fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Gearbox\">" << std::endl;
         //	<attnum name="shift time" unit="s" val="0.15"/>
         fout << "\t\t<section name=\"gears\">" << std::endl;
         fout << "\t\t\t<section name=\"r\">" << std::endl;
         fout << "\t\t\t\t<attnum name=\"ratio\" val=\"" << drivetrain.getValue("GEARS", "GEAR_R") << "\"/>" << std::endl;
-        //	<attnum name="inertia" val="0.0037"/>
-        //	<attnum name="efficiency" val="0.954"/>
+        // fout << "\t\t\t\t<attnum name=\"inertia\" val=\"" << 0.0037 << "\"/>" << std::endl;
+        // fout << "\t\t\t\t<attnum name=\"efficiency\" val=\"" << 0.954 << "\"/>" << std::endl;
         fout << "\t\t\t</section>" << std::endl;
-        size_t gears = drivetrain.getIntValue("GEARS", "COUNT");
+        const size_t gears = drivetrain.getIntValue("GEARS", "COUNT");
         for (size_t i = 0; i < gears; i++)
         {
             fout << "\t\t\t<section name=\"" << (i + 1) << "\">" << std::endl;
             fout << "\t\t\t\t<attnum name=\"ratio\" val=\"" << drivetrain.getValue("GEARS", "GEAR_" + std::to_string(i + 1)) << "\"/>" << std::endl;
-            //		<attnum name="inertia" val="0.0037"/>
-            //		<attnum name="efficiency" val="0.954"/>
+            // fout << "\t\t\t\t<attnum name=\"inertia\" val=\"" << 0.0037 << "\"/>" << std::endl;
+            // fout << "\t\t\t\t<attnum name=\"efficiency\" val=\"" << 0.954 << "\"/>" << std::endl;
             fout << "\t\t\t</section>" << std::endl;
         }
         fout << "\t\t</section>" << std::endl;
         fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Drivetrain\">" << std::endl;
         std::string traction = drivetrain.getValue("TRACTION", "TYPE");
         if (traction == "AWD")
             traction = "4WD";
         fout << "\t\t<attstr name=\"type\" val=\"" << traction << "\"/>" << std::endl;
-        //	<attnum name="inertia" unit="kg.m2" val="0.0091"/>
+        //fout << "\t\t<attnum name=\"inertia\" unit=\"kg.m2\" val=\"" << 0.0091 << "\"/>" << std::endl;
         fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Steer\">" << std::endl;
         //	<attnum name="steer lock" unit="deg" min="1" max="21" val="21"/>
         //	<attnum name="steering wheel rotation" unit="deg" min="5.456741" max="114.591568" val="114.591560"/>
         //	<attnum name="max steer speed" unit="deg/s" min="1" max="360" val="360"/>
         fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Brake System\">" << std::endl;
         if (brakes.getIntValue("DATA", "COCKPIT_ADJUSTABLE") == 1)
@@ -290,6 +351,8 @@ namespace
             fout << "\t\t<attnum name=\"front-rear brake repartition\" val=\"" << brakes.getValue("DATA", "FRONT_SHARE") << "\"/>" << std::endl;
         //	<attnum name="max pressure" unit="kPa" min="100" max="150000" val="25000"/>
         fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         float wheelbase = suspensions.getFloatValue("BASIC", "WHEELBASE");
         float cg = suspensions.getFloatValue("BASIC", "CG_LOCATION");
@@ -304,11 +367,15 @@ namespace
 
         xpos = (-cg * wheelbase) - graphicsCorrection[2];
 
+        //---------------------------------------------------------------------
+
         fout << "\t<section name=\"Rear Axle\">" << std::endl;
         fout << "\t\t<attnum name=\"xpos\" val=\"" << xpos << "\"/>" << std::endl;
         //	<attnum name="inertia" unit="kg.m2" val="0.0080"/>
         //	<attnum name="roll center height" unit="m" min="0" max="0.5" val="0.14"/>
         fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Front Differential\">" << std::endl;
         //	<attstr name="type" in="SPOOL,FREE,LIMITED SLIP" val="LIMITED SLIP"/>
@@ -318,6 +385,8 @@ namespace
         //	<attnum name="efficiency" val="1.0"/>
         fout << "\t</section>" << std::endl;
 
+        //---------------------------------------------------------------------
+
         fout << "\t<section name=\"Rear Differential\">" << std::endl;
         //	<attstr name="type" in="SPOOL,FREE,LIMITED SLIP" val="LIMITED SLIP"/>
         if (drivetrain.getValue("TRACTION", "TYPE") != "FWD")
@@ -326,8 +395,12 @@ namespace
         //	<attnum name="efficiency" val="1.0"/>
         fout << "\t</section>" << std::endl;
 
+        //---------------------------------------------------------------------
+
         fout << "\t<section name=\"Central Differential\">" << std::endl;
         fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Front Right Wheel\">" << std::endl;
         //  fout << "\t\t<attnum name = "ypos" unit = "m" val = "-0.83" / >" << std::endl;
@@ -337,14 +410,25 @@ namespace
         float tireAspectRatio = (tires.getFloatValue("FRONT", "RADIUS") - tires.getFloatValue("FRONT", "RIM_RADIUS")) / tires.getFloatValue("FRONT", "WIDTH");
         fout << "\t\t<attnum name=\"tire height-width ratio\" val=\"" << tireAspectRatio << "\"/>" << std::endl;
         //  fout << "\t\t<attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >" << std::endl;
+        //  <attnum name="mass" unit="kg" val="24.5"/>
         //  fout << "\t\t<attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >" << std::endl;
         //  fout << "\t\t<attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >" << std::endl;
         //  fout << "\t\t<attnum name = "camber" min = "-5" max = "0" unit = "deg" val = "-5" / >" << std::endl;
+        //  <attnum name="pressure" unit="PSI" min="22" max="55" val="29.0"/>
         //  fout << "\t\t<attnum name = "stiffness" val = "27.0" / >" << std::endl;
         //  fout << "\t\t<attnum name = "dynamic friction" unit = "%" val = "80" / >" << std::endl;
+        //  <attnum name="elasticity factor" val="0.87"/>
+        //  <attnum name = "operating load" unit = "N" val = "3123.75" / >
         //  fout << "\t\t<attnum name = "rolling resistance" val = "0.02" / >" << std::endl;
         //  fout << "\t\t<attnum name = "mu" min = "0.05" max = "1.6" val = "1.6" / >" << std::endl;
+		//  <attnum name="cold mu factor" val="0.82"/>
+		//  <attnum name="falloff grip multiplier" val="0.88"/>
+		//  <attnum name="optimal temperature" val="353.15"/>
+		//  <attnum name="heating multiplier" val="0.00002"/>
+		//  <attnum name="air cooling multiplier" val="0.0028"/>
         fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Front Left Wheel\">" << std::endl;
         //  <attnum name = "ypos" unit = "m" val = "-0.83" / >
@@ -361,6 +445,8 @@ namespace
         //  <attnum name = "rolling resistance" val = "0.02" / >
         //  <attnum name = "mu" min = "0.05" max = "1.6" val = "1.6" / >
         fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Rear Right Wheel\">" << std::endl;
         //  <attnum name = "ypos" unit = "m" val = "-0.83" / >
@@ -379,6 +465,8 @@ namespace
         //  <attnum name = "mu" min = "0.05" max = "1.6" val = "1.6" / >
         fout << "\t</section>" << std::endl;
 
+        //---------------------------------------------------------------------
+
         fout << "\t<section name=\"Rear Left Wheel\">" << std::endl;
         //  <attnum name = "ypos" unit = "m" val = "-0.83" / >
         fout << "\t\t<attnum name=\"rim diameter\" unit=\"m\" val=\"" << (tires.getFloatValue("REAR", "RIM_RADIUS") * 2.0f) << "\"/>" << std::endl;
@@ -395,13 +483,19 @@ namespace
         //  <attnum name = "mu" min = "0.05" max = "1.6" val = "1.6" / >
         fout << "\t</section>" << std::endl;
 
+        //---------------------------------------------------------------------
+
         fout << "\t<section name=\"Front Anti-Roll Bar\">" << std::endl;
         fout << "\t\t<attnum name=\"spring\" unit=\"N/m\" min=\"0\" max=\"50000\" val=\"" << suspensions.getValue("ARB", "FRONT") << "\"/>" << std::endl;
         fout << "\t</section>" << std::endl;
 
+        //---------------------------------------------------------------------
+
         fout << "\t<section name=\"Rear Anti-Roll Bar\">" << std::endl;
         fout << "\t\t<attnum name=\"spring\" unit=\"N/m\" min=\"0\" max=\"50000\" val=\"" << suspensions.getValue("ARB", "REAR") << "\"/>" << std::endl;
         fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Front Right Suspension\">" << std::endl;
         //	<attnum name="spring" unit="lbs/in" min="0" max="10000" val="5500"/>
@@ -414,6 +508,8 @@ namespace
         //	<attnum name="fast rebound" unit="lbs/in/s" min="0" max="1000" val="60"/>
         fout << "\t</section>" << std::endl;
 
+        //---------------------------------------------------------------------
+
         fout << "\t<section name=\"Front Left Suspension\">" << std::endl;
         //	<attnum name="spring" unit="lbs/in" min="0" max="10000" val="5500"/>
         //	<attnum name="suspension course" unit="m" min="0" max="0.25" val="0.07"/>
@@ -424,6 +520,8 @@ namespace
         //	<attnum name="fast bump" unit="lbs/in/s" min="0" max="1000" val="60"/>
         //	<attnum name="fast rebound" unit="lbs/in/s" min="0" max="1000" val="60"/>
         fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Rear Right Suspension\">" << std::endl;
         //	<attnum name="spring" unit="lbs/in" min="0" max="10000" val="5500"/>
@@ -436,6 +534,8 @@ namespace
         //	<attnum name="fast rebound" unit="lbs/in/s" min="0" max="1000" val="60"/>
         fout << "\t</section>" << std::endl;
 
+        //---------------------------------------------------------------------
+
         fout << "\t<section name=\"Rear Left Suspension\">" << std::endl;
         //	<attnum name="spring" unit="lbs/in" min="0" max="10000" val="5500"/>
         //	<attnum name="suspension course" unit="m" min="0" max="0.25" val="0.07"/>
@@ -447,6 +547,8 @@ namespace
         //	<attnum name="fast rebound" unit="lbs/in/s" min="0" max="1000" val="60"/>
         fout << "\t</section>" << std::endl;
 
+        //---------------------------------------------------------------------
+
         fout << "\t<section name=\"Front Right Brake\">" << std::endl;
         std::string nodeName = brakes.getValue("DISCS_GRAPHICS", "DISC_RF");
         const kn5::Node* disk = model.findNode(kn5::Node::Mesh, nodeName);
@@ -455,7 +557,10 @@ namespace
         //	<attnum name="piston area" unit="cm2" val="50"/>
         //	<attnum name="mu" val="0.45"/>
         //	<attnum name="inertia" unit="kg.m2" val="0.1241"/>
+        //  <attnum name="enable abs" min="0" max="1" val="1"/>
         fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Front Left Brake\">" << std::endl;
         nodeName = brakes.getValue("DISCS_GRAPHICS", "DISC_LF");
@@ -465,7 +570,10 @@ namespace
         //	<attnum name="piston area" unit="cm2" val="50"/>
         //	<attnum name="mu" val="0.45"/>
         //	<attnum name="inertia" unit="kg.m2" val="0.1241"/>
+        //  <attnum name="enable abs" min="0" max="1" val="1"/>
         fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Rear Right Brake\">" << std::endl;
         nodeName = brakes.getValue("DISCS_GRAPHICS", "DISC_RR");
@@ -475,7 +583,10 @@ namespace
         //	<attnum name="piston area" unit="cm2" val="50"/>
         //	<attnum name="mu" val="0.45"/>
         //	<attnum name="inertia" unit="kg.m2" val="0.1241"/>
+        //  <attnum name="enable abs" min="0" max="1" val="1"/>
         fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Rear Left Brake\">" << std::endl;
         nodeName = brakes.getValue("DISCS_GRAPHICS", "DISC_LR");
@@ -485,7 +596,10 @@ namespace
         //	<attnum name="piston area" unit="cm2" val="50"/>
         //	<attnum name="mu" val="0.45"/>
         //	<attnum name="inertia" unit="kg.m2" val="0.1241"/>
+        //  <attnum name="enable abs" min="0" max="1" val="1"/>
         fout << "\t</section>" << std::endl;
+
+        //---------------------------------------------------------------------
 
         fout << "</params>" << std::endl;
 
