@@ -902,7 +902,11 @@ void kn5::writeAc3dMaterials(std::ostream& fout, const Node& node, const std::se
 
         std::string materialName = material.m_name;
 
-        materialName.replace(materialName.begin(), materialName.end(), ' ', '_');
+        for (size_t i = 0; i < materialName.size(); i++)
+        {
+            if (materialName[i] == ' ')
+                materialName[i] = '_';
+        }
 
         fout << "MATERIAL " << "\"" << materialName << "\"";
 
