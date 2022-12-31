@@ -176,22 +176,27 @@ namespace
 
             fout << "\t\t<attnum name=\"front area\" unit=\"m2\" val=\"" << (aero.getFloatValue("WING_0", "CHORD") * aero.getFloatValue("WING_0", "SPAN")) << "\"/>" << std::endl;
 
-            std::string clLutFile = aero.getValue("WING_0", "LUT_AOA_CL");
+            float clGain = aero.getFloatValue("WING_0", "CL_GAIN");
 
-            std::filesystem::path   clLutFilePath = dataDirectoryPath;
-
-            clLutFilePath.append(clLutFile);
-
-            if (std::filesystem::exists(cdLutFilePath))
+            if (clGain != 0)
             {
-                lut clLut(clLutFilePath.string());
+                std::string clLutFile = aero.getValue("WING_0", "LUT_AOA_CL");
 
-                std::vector<std::pair<float, float>> entries = clLut.getValues();
+                std::filesystem::path   clLutFilePath = dataDirectoryPath;
 
-                float value = clLut.lookup(0);
+                clLutFilePath.append(clLutFile);
 
-                fout << "\t\t<attnum name=\"front Clift\" min=\"0.0\" max=\"1.0\" val=\"" << value << "\"/>" << std::endl;
-                fout << "\t\t<attnum name=\"rear Clift\" min=\"0.0\" max=\"1.0\" val=\"" << value << "\"/>" << std::endl;
+                if (std::filesystem::exists(cdLutFilePath))
+                {
+                    lut clLut(clLutFilePath.string());
+
+                    std::vector<std::pair<float, float>> entries = clLut.getValues();
+
+                    float value = clLut.lookup(0) * clGain;
+
+                    fout << "\t\t<attnum name=\"front Clift\" min=\"0.0\" max=\"1.0\" val=\"" << value << "\"/>" << std::endl;
+                    fout << "\t\t<attnum name=\"rear Clift\" min=\"0.0\" max=\"1.0\" val=\"" << value << "\"/>" << std::endl;
+                }
             }
         }
         fout << "\t</section>" << std::endl;
