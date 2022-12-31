@@ -57,7 +57,7 @@ namespace
         //if (std::filesystem::exists(std::filesystem::path(dataDirectoryPath).append("electronics.ini").string()))
         //    electronics.read(std::filesystem::path(dataDirectoryPath).append("electronics.ini").string());
         ini engine(std::filesystem::path(dataDirectoryPath).append("engine.ini").string());
-        ini lods(std::filesystem::path(dataDirectoryPath).append("lods.ini").string());
+        //ini lods(std::filesystem::path(dataDirectoryPath).append("lods.ini").string());
         //ini flames;
         //if (std::filesystem::exists(std::filesystem::path(dataDirectoryPath).append("flames.ini").string()))
         //    flames.read(std::filesystem::path(dataDirectoryPath).append("flames.ini").string());
@@ -220,9 +220,7 @@ namespace
                 {
                     lut clLut(clLutFilePath.string());
 
-                    std::vector<std::pair<float, float>> entries = clLut.getValues();
-
-                    float value = clLut.lookup(0) * clGain;
+                    const float value = clLut.lookup(0) * clGain;
 
                     fout << "\t\t<attnum name=\"front Clift\" min=\"0.0\" max=\"1.0\" val=\"" << value << "\"/>" << std::endl;
                     fout << "\t\t<attnum name=\"rear Clift\" min=\"0.0\" max=\"1.0\" val=\"" << value << "\"/>" << std::endl;
