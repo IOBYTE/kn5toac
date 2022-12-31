@@ -887,6 +887,31 @@ int main(int argc, char* argv[])
             remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_RR"));
         }
 
+        // rename skin texture
+        if (!skinFileName.empty())
+        {
+            for (auto& material : model.m_materials)
+            {
+                kn5::TextureMapping* txDiffuse = material.findTextureMapping("txDiffuse");
+
+                if (txDiffuse && txDiffuse->m_textureName == skinFileName)
+                {
+                    size_t extension = skinFileName.find('.');
+
+                    if (extension != std::string::npos)
+                    {
+                        txDiffuse->m_textureName = inputFileDirectoryName + skinFileName.substr(extension);
+
+                        for (auto& texture : model.m_textures)
+                        {
+                            if (texture.m_name == skinFileName)
+                                texture.m_name = txDiffuse->m_textureName;
+                        }
+                    }
+                }
+            }
+        }
+
         model.transform(xform);
         model.removeEmptyNodes();
 
