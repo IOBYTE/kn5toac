@@ -48,7 +48,7 @@ namespace
 
     void writeConfig(const std::filesystem::path& inputPath, const std::string& dataDirectoryPath, const std::string& filename, const kn5& model, float length, float width, float height, const std::string& category, bool outputACC)
     {
-        //ini aero(std::filesystem::path(dataDirectoryPath).append("aero.ini").string());
+        ini aero(std::filesystem::path(dataDirectoryPath).append("aero.ini").string());
         ini brakes(std::filesystem::path(dataDirectoryPath).append("brakes.ini").string());
         ini car(std::filesystem::path(dataDirectoryPath).append("car.ini").string());
         //ini colliders(std::filesystem::path(dataDirectoryPath).append("colliders.ini").string());
@@ -159,10 +159,55 @@ namespace
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Aerodynamics\">" << std::endl;
-        //	<attnum name="Cx" val="0.347"/>
-        //	<attnum name="front area" unit="m2" val="1.97"/>
-        //	<attnum name="front Clift" min="0.0" max="1.0" val="0.7"/>
-        //	<attnum name="rear Clift" min="0.0" max="1.0" val="0.68"/>
+        if (aero.getValue("WING_0", "NAME") == "BODY")
+        {
+            std::string cdLutFile = aero.getValue("WING_0", "LUT_AOA_CD");
+
+            std::filesystem::path   cdLutFilePath = dataDirectoryPath;
+
+            cdLutFilePath.append(cdLutFile);
+
+            if (std::filesystem::exists(cdLutFilePath))
+            {
+                lut cdLut(cdLutFilePath.string());
+
+                std::vector<std::pair<float, float>> entries = cdLut.getValues();
+
+                for (size_t i = 0; i < entries.size(); i++)
+                {
+                    if (entries[i].first == 0)
+                    {
+                        fout << "\t\t<attnum name=\"Cx\" val=\"" << entries[i].second << "\"/>" << std::endl;
+                        break;
+                    }
+                }
+            }
+
+            fout << "\t\t<attnum name=\"front area\" unit=\"m2\" val=\"" << (aero.getFloatValue("WING_0", "CHORD") * aero.getFloatValue("WING_0", "SPAN")) << "\"/>" << std::endl;
+
+            std::string clLutFile = aero.getValue("WING_0", "LUT_AOA_CL");
+
+            std::filesystem::path   clLutFilePath = dataDirectoryPath;
+
+            clLutFilePath.append(clLutFile);
+
+            if (std::filesystem::exists(cdLutFilePath))
+            {
+                lut clLut(clLutFilePath.string());
+
+                std::vector<std::pair<float, float>> entries = clLut.getValues();
+
+                for (size_t i = 0; i < entries.size(); i++)
+                {
+                    if (entries[i].first == 0)
+                    {
+                        fout << "\t\t<attnum name=\"front Clift\" min=\"0.0\" max=\"1.0\" val=\"" << entries[i].second << "\"/>" << std::endl;
+                        fout << "\t\t<attnum name=\"rear Clift\" min=\"0.0\" max=\"1.0\" val=\"" << entries[i].second << "\"/>" << std::endl;
+                        break;
+                    }
+                }
+            }
+        }
         fout << "\t</section>" << std::endl;
 
         fout << "\t<section name=\"Front Wing\">" << std::endl;
