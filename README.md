@@ -18,7 +18,7 @@ The car xml config file is generated from the kn5, ini and lut files.  The ini f
 
 The wheels can't be used without modifications.  The brake disks can't be used because they are created by Speed Dreams.  Reusing these unmodified from the original model will require changing the Speed Dreams loaders or writing a kn5 loader for osg and ssg.
 
-It's possible to load and drive the assetto corsa sdk formuls_k car.  The frame rate is low because only the highest quality LOD is loaded. Some high poly count models crash the ssg loader. Not every car parameter is avilable so weird defaults are picked.  The default wheels look funny.  It's not just convert and play yet.
+It's possible to load and drive the assetto corsa sdk formuls_k car.  The frame rate is low because only the highest quality LOD is loaded. Some high poly count models crash the ssg loader. The cars don't show up when using the osg loader. Not every car parameter is avilable so weird defaults are picked.  The default wheels look funny.  It's not just convert and play yet.
 
 Build with CMake on Windows
 ---------------------------
