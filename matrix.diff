@@ -1,0 +1,521 @@
+diff --git a/acd.cpp b/acd.cpp
+index c5f48a0..27a8c8c 100644
+--- a/acd.cpp
++++ b/acd.cpp
+@@ -1,33 +1,9 @@
+ #include "acd.h"
++#include "kn5.h"
+ 
+ #include <iostream>
+ #include <fstream>
+ 
+-namespace
+-{
+-	int32_t readInt32(std::istream& stream)
+-	{
+-		int32_t value;
+-		stream.read(reinterpret_cast<char*>(&value), sizeof(int32_t));
+-		return value;
+-	}
+-
+-	std::string readString(std::istream& stream, size_t length)
+-	{
+-		char* text = new char[length + 1];
+-		text[length] = 0;
+-		stream.read(text, length);
+-		std::string string(text, length);
+-		delete[] text;
+-		return string;
+-	}
+-
+-	std::string readString(std::istream& stream)
+-	{
+-		return readString(stream, readInt32(stream));
+-	}
+-}
+-
+ void acd::read(const std::string& fileName)
+ {
+ 	calculateKey(std::filesystem::path(fileName).parent_path().filename().string());
+diff --git a/kn5.cpp b/kn5.cpp
+index e027761..e7eda28 100644
+--- a/kn5.cpp
++++ b/kn5.cpp
+@@ -6,61 +6,49 @@
+ #include <list>
+ #include <limits>
+ 
+-namespace
+-{
+-    void quote(std::string& string)
+-    {
+-        if (string.find(' ') != std::string::npos)
+-        {
+-            string.insert(0, 1, '"');
+-            string.append(1, '"');
+-        }
+-    }
+-}
+-
+-int32_t kn5::readInt32(std::istream& stream)
++int32_t readInt32(std::istream& stream)
+ {
+     int32_t value;
+     stream.read(reinterpret_cast<char*>(&value), sizeof(int32_t));
+     return value;
+ }
+ 
+-float kn5::readFloat(std::istream& stream)
++float readFloat(std::istream& stream)
+ {
+     float value;
+     stream.read(reinterpret_cast<char*>(&value), sizeof(float));
+     return value;
+ }
+ 
+-uint8_t kn5::readUint8(std::istream& stream)
++uint8_t readUint8(std::istream& stream)
+ {
+     uint8_t value;
+     stream.read(reinterpret_cast<char*>(&value), sizeof(uint8_t));
+     return value;
+ }
+ 
+-uint16_t kn5::readUint16(std::istream& stream)
++uint16_t readUint16(std::istream& stream)
+ {
+     uint16_t value;
+     stream.read(reinterpret_cast<char*>(&value), sizeof(uint16_t));
+     return value;
+ }
+ 
+-uint32_t kn5::readUint32(std::istream& stream)
++uint32_t readUint32(std::istream& stream)
+ {
+     uint32_t value;
+     stream.read(reinterpret_cast<char*>(&value), sizeof(uint32_t));
+     return value;
+ }
+ 
+-bool kn5::readBool(std::istream& stream)
++bool readBool(std::istream& stream)
+ {
+     bool value;
+     stream.read(reinterpret_cast<char*>(&value), sizeof(bool));
+     return value;
+ }
+ 
+-std::string kn5::readString(std::istream& stream, size_t length)
++std::string readString(std::istream& stream, size_t length)
+ {
+     char* text = new char[length + 1];
+     text[length] = 0;
+@@ -70,26 +58,26 @@ std::string kn5::readString(std::istream& stream, size_t length)
+     return string;
+ }
+ 
+-kn5::Vec2 kn5::readVec2(std::istream& stream)
++Vec2 readVec2(std::istream& stream)
+ {
+-    kn5::Vec2   vec;
++    Vec2   vec;
+     vec[0] = readFloat(stream);
+     vec[1] = readFloat(stream);
+     return vec;
+ }
+ 
+-kn5::Vec3 kn5::readVec3(std::istream& stream)
++Vec3 readVec3(std::istream& stream)
+ {
+-    kn5::Vec3   vec;
++    Vec3   vec;
+     vec[0] = readFloat(stream);
+     vec[1] = readFloat(stream);
+     vec[2] = readFloat(stream);
+     return vec;
+ }
+ 
+-kn5::Vec4 kn5::readVec4(std::istream& stream)
++Vec4 readVec4(std::istream& stream)
+ {
+-    kn5::Vec4   vec;
++    Vec4   vec;
+     vec[0] = readFloat(stream);
+     vec[1] = readFloat(stream);
+     vec[2] = readFloat(stream);
+@@ -97,7 +85,7 @@ kn5::Vec4 kn5::readVec4(std::istream& stream)
+     return vec;
+ }
+ 
+-kn5::Vec3 kn5::Vec3::transformPoint(const Matrix& matrix) const
++Vec3 Vec3::transformPoint(const Matrix& matrix) const
+ {
+     Vec3 dst;
+ 
+@@ -112,7 +100,7 @@ kn5::Vec3 kn5::Vec3::transformPoint(const Matrix& matrix) const
+     return dst;
+ }
+ 
+-kn5::Vec3 kn5::Vec3::transformVector(const Matrix& matrix) const
++Vec3 Vec3::transformVector(const Matrix& matrix) const
+ {
+     Vec3 dst;
+ 
+@@ -127,7 +115,7 @@ kn5::Vec3 kn5::Vec3::transformVector(const Matrix& matrix) const
+     return dst;
+ }
+ 
+-kn5::Matrix kn5::Matrix::multiply(const Matrix & matrix) const
++Matrix Matrix::multiply(const Matrix & matrix) const
+ {
+     Matrix dst;
+ 
+@@ -157,16 +145,28 @@ kn5::Matrix kn5::Matrix::multiply(const Matrix & matrix) const
+     return dst;
+ }
+ 
+-void kn5::Matrix::makeIdentity()
++void Matrix::makeIdentity()
+ {
+     *this = Matrix();
+ }
+ 
+-std::string kn5::readString(std::istream& stream)
++std::string readString(std::istream& stream)
+ {
+     return readString(stream, readInt32(stream));
+ }
+ 
++namespace
++{
++    void quote(std::string& string)
++    {
++        if (string.find(' ') != std::string::npos)
++        {
++            string.insert(0, 1, '"');
++            string.append(1, '"');
++        }
++    }
++}
++
+ void kn5::Texture::read(std::istream& stream)
+ {
+     m_type = readInt32(stream);
+@@ -359,7 +359,7 @@ void kn5::Node::BoundingSphere::dump(std::ostream& stream, const std::string& in
+     stream << indent << "radius:  " << m_radius << std::endl;
+ }
+ 
+-void kn5::Matrix::read(std::istream& stream)
++void Matrix::read(std::istream& stream)
+ {
+     for (size_t i = 0; i < 4; i++)
+     {
+@@ -370,7 +370,7 @@ void kn5::Matrix::read(std::istream& stream)
+     }
+ }
+ 
+-void kn5::Matrix::dump(std::ostream& stream, const std::string& indent) const
++void Matrix::dump(std::ostream& stream, const std::string& indent) const
+ {
+     stream << indent << "matrix:" << std::endl;
+     stream << indent << "  " << m_data[0][0] << ", " << m_data[0][1] << ", " << m_data[0][2] << ", " << m_data[0][3] << std::endl;
+@@ -379,7 +379,7 @@ void kn5::Matrix::dump(std::ostream& stream, const std::string& indent) const
+     stream << indent << "  " << m_data[3][0] << ", " << m_data[3][1] << ", " << m_data[3][2] << ", " << m_data[3][3] << std::endl;
+ }
+ 
+-bool kn5::Matrix::isIdentity() const
++bool Matrix::isIdentity() const
+ {
+     return m_data[0][0] == 1 && m_data[0][1] == 0 && m_data[0][2] == 0 && m_data[0][3] == 0 &&
+            m_data[1][0] == 0 && m_data[1][1] == 1 && m_data[1][2] == 0 && m_data[1][3] == 0 &&
+@@ -387,14 +387,14 @@ bool kn5::Matrix::isIdentity() const
+            m_data[3][0] == 0 && m_data[3][1] == 0 && m_data[3][2] == 0 && m_data[3][3] == 1;
+ }
+ 
+-bool kn5::Matrix::isRotation() const
++bool Matrix::isRotation() const
+ {
+     return m_data[0][0] != 1 || m_data[0][1] != 0 || m_data[0][2] != 0 ||
+            m_data[1][0] != 0 || m_data[1][1] != 1 || m_data[1][2] != 0 ||
+            m_data[2][0] != 0 || m_data[2][1] != 0 || m_data[2][2] != 1;
+ }
+ 
+-bool kn5::Matrix::isTranslation() const
++bool Matrix::isTranslation() const
+ {
+     return m_data[3][0] != 0 || m_data[3][1] != 0 || m_data[3][2] != 0;
+ }
+@@ -806,11 +806,32 @@ kn5::Node* kn5::findNode(Node &node, Node::NodeType type, const std::string& nam
+     return nullptr;
+ }
+ 
++const kn5::Node* kn5::findNode(const Node& node, Node::NodeType type, const std::string& name) const
++{
++    if (node.m_type == type && node.m_name == name)
++        return &node;
++
++    for (auto& child : node.m_children)
++    {
++        const Node* found = findNode(child, type, name);
++
++        if (found)
++            return found;
++    }
++
++    return nullptr;
++}
++
+ kn5::Node* kn5::findNode(Node::NodeType type, const std::string& name)
+ {
+     return findNode(m_node, type, name);
+ }
+ 
++const kn5::Node* kn5::findNode(Node::NodeType type, const std::string& name) const
++{
++    return findNode(m_node, type, name);
++}
++
+ void kn5::writeAc3d(const std::string& file, bool convertToPNG, bool outputACC, bool useDiffuse) const
+ {
+     writeAc3d(file, m_node, convertToPNG, outputACC, useDiffuse);
+diff --git a/kn5.h b/kn5.h
+index aad6c4d..1ead5ce 100644
+--- a/kn5.h
++++ b/kn5.h
+@@ -7,67 +7,67 @@
+ #include <array>
+ #include <set>
+ 
+-class kn5
++struct Matrix
+ {
+-public:
+-    struct Matrix
++    float   m_data[4][4] =
+     {
+-        float   m_data[4][4] =
+-        {
+-             { 1.0f, 0.0f, 0.0f, 0.0f },
+-             { 0.0f, 1.0f, 0.0f, 0.0f },
+-             { 0.0f, 0.0f, 1.0f, 0.0f },
+-             { 0.0f, 0.0f, 0.0f, 1.0f }
+-        };
+-
+-        void read(std::istream& stream);
+-        void dump(std::ostream& stream, const std::string& indent = "") const;
+-        bool isIdentity() const;
+-        bool isRotation() const;
+-        bool isTranslation() const;
+-        void makeIdentity();
+-
+-        Matrix multiply(const Matrix& matrix) const;
++         { 1.0f, 0.0f, 0.0f, 0.0f },
++         { 0.0f, 1.0f, 0.0f, 0.0f },
++         { 0.0f, 0.0f, 1.0f, 0.0f },
++         { 0.0f, 0.0f, 0.0f, 1.0f }
+     };
+ 
+-    struct Vec2 : public std::array<float, 2>
+-    {
+-    };
++    void read(std::istream& stream);
++    void dump(std::ostream& stream, const std::string& indent = "") const;
++    bool isIdentity() const;
++    bool isRotation() const;
++    bool isTranslation() const;
++    void makeIdentity();
+ 
+-    struct Vec3 : public std::array<float, 3>
+-    {
+-        Vec3 transformPoint(const Matrix& matrix) const;
+-        Vec3 transformVector(const Matrix& matrix) const;
++    Matrix multiply(const Matrix& matrix) const;
++};
+ 
+-        Vec3 operator - (const Vec3& other) const
+-        {
+-            return Vec3{ at(0) - other.at(0),
+-                         at(1) - other.at(1),
+-                         at(2) - other.at(2) };
+-        }
+-        Vec3 cross(const Vec3& other) const
+-        {
+-            return Vec3{ at(1) * other.at(2) - at(2) * other.at(1),
+-                         at(2) * other.at(0) - at(0) * other.at(2),
+-                         at(0) * other.at(1) - at(1) * other.at(0) };
+-        }
+-    };
++struct Vec2 : public std::array<float, 2>
++{
++};
+ 
+-    struct Vec4 : public std::array<float, 4>
++struct Vec3 : public std::array<float, 3>
++{
++    Vec3 transformPoint(const Matrix& matrix) const;
++    Vec3 transformVector(const Matrix& matrix) const;
++
++    Vec3 operator - (const Vec3& other) const
+     {
+-    };
++        return Vec3{ at(0) - other.at(0),
++                     at(1) - other.at(1),
++                     at(2) - other.at(2) };
++    }
++    Vec3 cross(const Vec3& other) const
++    {
++        return Vec3{ at(1) * other.at(2) - at(2) * other.at(1),
++                     at(2) * other.at(0) - at(0) * other.at(2),
++                     at(0) * other.at(1) - at(1) * other.at(0) };
++    }
++};
++
++struct Vec4 : public std::array<float, 4>
++{
++};
+ 
+-    static int32_t readInt32(std::istream& stream);
+-    static float readFloat(std::istream& stream);
+-    static uint8_t readUint8(std::istream& stream);
+-    static uint16_t readUint16(std::istream& stream);
+-    static uint32_t readUint32(std::istream& stream);
+-    static bool readBool(std::istream& stream);
+-    static std::string readString(std::istream& stream, size_t length);
+-    static std::string readString(std::istream& stream);
+-    static Vec2 readVec2(std::istream& stream);
+-    static Vec3 readVec3(std::istream& stream);
+-    static Vec4 readVec4(std::istream& stream);
++int32_t readInt32(std::istream& stream);
++float readFloat(std::istream& stream);
++uint8_t readUint8(std::istream& stream);
++uint16_t readUint16(std::istream& stream);
++uint32_t readUint32(std::istream& stream);
++bool readBool(std::istream& stream);
++std::string readString(std::istream& stream, size_t length);
++std::string readString(std::istream& stream);
++Vec2 readVec2(std::istream& stream);
++Vec3 readVec3(std::istream& stream);
++Vec4 readVec4(std::istream& stream);
++class kn5
++{
++public:
+ 
+     struct Texture
+     {
+@@ -239,6 +239,7 @@ public:
+     int getNewMaterialID(int materialID, const std::set<int>& usedMaterialIDs) const;
+ 
+     Node * findNode(Node& node, Node::NodeType type, const std::string& name);
++    const Node* findNode(const Node& node, Node::NodeType type, const std::string& name) const;
+ 
+     int32_t                 m_version = 0;
+     int32_t                 m_unknown = 0;
+@@ -254,6 +255,7 @@ public:
+     void transform(Node &node, const Matrix& matrix);
+     void removeEmptyNodes();
+     Node * findNode(Node::NodeType type, const std::string& name);
++    const Node* findNode(Node::NodeType type, const std::string& name) const;
+     void writeTextures(const std::string& directory, bool convertToPNG, bool deleteDDS) const;
+     void writeAc3d(const std::string& file, bool convertToPNG, bool outputACC, bool useDiffuse) const;
+     void writeAc3d(const std::string& file, const Node& node, bool convertToPNG, bool outputACC, bool useDiffuse) const;
+diff --git a/kn5toac.cpp b/kn5toac.cpp
+index 559b2bd..e35ba10 100644
+--- a/kn5toac.cpp
++++ b/kn5toac.cpp
+@@ -17,7 +17,7 @@ namespace
+         }
+     }
+ 
+-    bool extract(kn5& model, const std::string& name, const kn5::Matrix& xform, const std::string& file)
++    bool extract(kn5& model, const std::string& name, const Matrix& xform, const std::string& file)
+     {
+         kn5::Node* transformNode = model.findNode(kn5::Node::Transform, name);
+ 
+@@ -46,7 +46,17 @@ namespace
+             node->m_parent->removeChild(node);
+     }
+ 
+-    void writeConfig(const std::filesystem::path& inputPath, const std::string& filename, kn5& model, float length, float width, float height, const std::string& category)
++    Matrix getMatrix(const kn5& model, const std::string& name)
++    {
++        const kn5::Node* node = model.findNode(kn5::Node::Transform, name);
++
++        if (node)
++            return node->m_matrix;
++
++        return Matrix();
++    }
++
++    void writeConfig(const std::filesystem::path& inputPath, const std::string& filename, const kn5& model, float length, float width, float height, const std::string& category)
+     {
+         std::string iniPathString = inputPath.string();
+ 
+@@ -84,6 +94,17 @@ namespace
+         ini suspensions(iniPathString + "data/suspensions.ini");
+         ini tires(iniPathString + "data/tyres.ini");
+ 
++        std::array<float,3>    graphicsCorrection = car.getFloatArray3Value("BASIC", "GRAPHICS_OFFSET");
++
++        Matrix  wheelLeftFront = getMatrix(model, "WHEEL_LF");
++        Matrix  wheelLeftRear = getMatrix(model, "WHEEL_LR");
++        Matrix  wheelRightFront = getMatrix(model, "WHEEL_RF");
++        Matrix  wheelRightRear = getMatrix(model, "WHEEL_RR");
++        Matrix  diskLeftFront = getMatrix(model, "DISK_LF");
++        Matrix  diskLeftRear = getMatrix(model, "DISK_LR");
++        Matrix  diskRightFront = getMatrix(model, "DISK_RF");
++        Matrix  diskRightRear = getMatrix(model, "DISK_RR");
++
+         std::string modelFileName = inputPath.filename().string() + ".ac";
+ 
+         std::ofstream   fout(filename);
+@@ -137,8 +158,8 @@ namespace
+         fout << "\t\t<section name=\"Steer Wheel\">" << std::endl;
+         fout << "\t\t\t<attstr name=\"model\" val=\"steer.acc\"/>" << std::endl;
+         fout << "\t\t\t<attstr name=\"hi res model\" val=\"histeer.acc\"/>" << std::endl;
+-        kn5::Vec3   steer = { 0, 0, 0 };
+-        kn5::Node* steerNode = model.findNode(kn5::Node::Transform, "STEER_LR");
++        Vec3   steer = { 0, 0, 0 };
++        const kn5::Node* steerNode = model.findNode(kn5::Node::Transform, "STEER_LR");
+ 
+         if (steerNode)
+         {
+@@ -278,14 +299,17 @@ namespace
+         float wheelbase = suspensions.getFloatValue("BASIC", "WHEELBASE");
+         float cg = suspensions.getFloatValue("BASIC", "CG_LOCATION");
+ 
++        float xpos = wheelLeftFront.m_data[3][2];
++        float xpos1 = ((wheelbase * (1 - cg)) - graphicsCorrection[2]);
++
+         fout << "\t<section name=\"Front Axle\">" << std::endl;
+-        fout << "\t\t<attnum name=\"xpos\" val=\"" << (wheelbase * cg) << "\"/>" << std::endl;
++        fout << "\t\t<attnum name=\"xpos\" val=\"" << ((wheelbase * (1 - cg)) - graphicsCorrection[2]) << "\"/>" << std::endl;
+         //	<attnum name="inertia" unit="kg.m2" val="0.0056"/>
+         //	<attnum name="roll center height" unit="m" min="0" max="0.5" val="0.11"/>
+         fout << "\t</section>" << std::endl;
+ 
+         fout << "\t<section name=\"Rear Axle\">" << std::endl;
+-        fout << "\t\t<attnum name=\"xpos\" val=\"" << ((cg - 1) * wheelbase) << "\"/>" << std::endl;
++        fout << "\t\t<attnum name=\"xpos\" val=\"" << ((-cg * wheelbase) - graphicsCorrection[2]) << "\"/>" << std::endl;
+         //	<attnum name="inertia" unit="kg.m2" val="0.0080"/>
+         //	<attnum name="roll center height" unit="m" min="0" max="0.5" val="0.14"/>
+         fout << "\t</section>" << std::endl;
+@@ -688,8 +712,8 @@ int main(int argc, char* argv[])
+                 collider.dump(of1);
+         }
+ 
+-        kn5::Vec3 minimum = { 100000, 100000, 100000 };
+-        kn5::Vec3 maximum = { -100000, -100000, -100000 };
++        Vec3 minimum = { 100000, 100000, 100000 };
++        Vec3 maximum = { -100000, -100000, -100000 };
+ 
+         kn5::Node& mesh = collider.m_node;
+         while (mesh.m_type == kn5::Node::Transform && mesh.m_children.size() == 1)
+@@ -731,7 +755,7 @@ int main(int argc, char* argv[])
+ 
+     if (writeModel)
+     {
+-        kn5::Matrix xform;
++        Matrix xform;
+ 
+         xform.m_data[0][0] = 0;
+         xform.m_data[0][1] = 0;

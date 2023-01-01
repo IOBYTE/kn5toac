@@ -573,6 +573,17 @@ void kn5::Node::removeEmptyNodes()
     }
 }
 
+void kn5::Node::removeInactiveNodes()
+{
+    for (std::vector<Node>::iterator it = m_children.begin(); it != m_children.end(); )
+    {
+        if (it->m_type == Transform && it->m_active == false)
+            it = m_children.erase(it);
+        else
+            it++;
+    }
+}
+
 void kn5::Node::dump(std::ostream& stream, const std::string& indent) const
 {
     stream << indent << "type:        " << kn5::Node::to_string(m_type) << std::endl;
@@ -799,6 +810,11 @@ void kn5::transform(Node &node, const Matrix& matrix)
 void kn5::removeEmptyNodes()
 {
     m_node.removeEmptyNodes();
+}
+
+void kn5::removeInactiveNodes()
+{
+    m_node.removeInactiveNodes();
 }
 
 kn5::Node* kn5::findNode(Node &node, Node::NodeType type, const std::string& name)

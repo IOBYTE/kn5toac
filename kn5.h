@@ -229,6 +229,7 @@ public:
         void transform(const Matrix& matrix);
         bool removeChild(Node* child);
         void removeEmptyNodes();
+        void removeInactiveNodes();
     };
 
     void readTextures(std::istream& stream);
@@ -255,6 +256,7 @@ public:
     void transform(const Matrix& matrix);
     void transform(Node &node, const Matrix& matrix);
     void removeEmptyNodes();
+    void removeInactiveNodes();
     Node* findNode(Node::NodeType type, const std::string& name);
     const Node* findNode(Node::NodeType type, const std::string& name) const;
     void writeTextures(const std::string& directory, bool convertToPNG, bool deleteDDS) const;

@@ -1,0 +1,163 @@
+diff --git a/kn5.h b/kn5.h
+index d4ead0e..1f7597a 100644
+--- a/kn5.h
++++ b/kn5.h
+@@ -6,6 +6,9 @@
+ #include <vector>
+ #include <array>
+ #include <set>
++#include <limits>
++
++#define PI 3.14159265358979323846f
+ 
+ class kn5
+ {
+@@ -26,6 +29,54 @@ public:
+         bool isRotation() const;
+         bool isTranslation() const;
+ 
++        bool closeEnough(const float& a, const float& b, const float& epsilon = std::numeric_limits<float>::epsilon()) const
++        {
++            return (epsilon > std::abs(a - b));
++        }
++
++        void getEulerAngles(float &rotX, float &rotY, float &rotZ) const
++        {
++            //check for gimbal lock
++            if (closeEnough(m_data[0][2], -1.0f))
++            {
++                rotX = 0; //gimbal lock, value of x doesn't matter
++                rotY = PI / 2;
++                rotZ = rotX + atan2(m_data[1][0], m_data[2][0]);
++                return;
++            }
++            else if (closeEnough(m_data[0][2], 1.0f))
++            {
++                rotX = 0;
++                rotY = -PI / 2;
++                rotZ = -rotX + atan2(-m_data[1][0], -m_data[2][0]);
++                return;
++            }
++            
++            //two solutions exist
++            float x1 = -asin(m_data[0][2]);
++            float x2 = PI - x1;
++
++            float y1 = atan2(m_data[1][2] / cos(x1), m_data[2][2] / cos(x1));
++            float y2 = atan2(m_data[1][2] / cos(x2), m_data[2][2] / cos(x2));
++
++            float z1 = atan2(m_data[0][1] / cos(x1), m_data[0][0] / cos(x1));
++            float z2 = atan2(m_data[0][1] / cos(x2), m_data[0][0] / cos(x2));
++
++            //choose one solution to return
++            //for example the "shortest" rotation
++            if ((std::abs(x1) + std::abs(y1) + std::abs(z1)) <= (std::abs(x2) + std::abs(y2) + std::abs(z2)))
++            {
++                rotX = x1;
++                rotY = y1;
++                rotZ = z1;
++                return;
++            }
++               
++            rotX = x2;              
++            rotY = y2;             
++            rotZ = z2;
++        }
++
+         Matrix multiply(const Matrix& matrix) const;
+     };
+ 
+diff --git a/kn5toac.cpp b/kn5toac.cpp
+index 16fe90a..5c38d51 100644
+--- a/kn5toac.cpp
++++ b/kn5toac.cpp
+@@ -9,23 +9,26 @@ static void extract(kn5& model, const std::string& name, const kn5::Matrix& xfor
+ {
+     kn5::Node* transformNode = model.findNode(kn5::Node::Transform, name);
+ 
+-    if (transformNode)
++    if (!transformNode)
+     {
+-        kn5::Node   node = transformNode->m_children[0];
++        std::cerr << "Couldn't find node: " << name << std::endl;
++        return;
++    }
++
++    kn5::Node   node = transformNode->m_children[0];
+ 
+-        node.transform(xform);
++    node.transform(xform);
+ 
+-        model.writeAc3d(file, node, true, file.find(".acc") != std::string::npos, true);
++    model.writeAc3d(file, node, true, file.find(".acc") != std::string::npos, true);
+ 
+-        if (transformNode->m_parent)
++    if (transformNode->m_parent)
++    {
++        for (std::vector<kn5::Node>::iterator it = transformNode->m_parent->m_children.begin(); it != transformNode->m_parent->m_children.end(); ++it)
+         {
+-            for (std::vector<kn5::Node>::iterator it = transformNode->m_parent->m_children.begin(); it != transformNode->m_parent->m_children.end(); ++it)
++            if (&(*it) == transformNode)
+             {
+-                if (&(*it) == transformNode)
+-                {
+-                    transformNode->m_parent->m_children.erase(it);
+-                    break;
+-                }
++                transformNode->m_parent->m_children.erase(it);
++                break;
+             }
+         }
+     }
+@@ -125,22 +128,31 @@ static void writeConfig(const std::filesystem::path& inputPath, const std::strin
+     fout << "\t\t<section name=\"Light\">" << std::endl;
+     fout << "\t\t</section>" << std::endl;
+     fout << "\t\t<section name=\"Steer Wheel\">" << std::endl;
+-    fout << "\t\t\t<attstr name=\"model\" val=\"steer.acc\"/>" << std::endl;
+-    fout << "\t\t\t<attstr name=\"hi res model\" val=\"histeer.acc\"/>" << std::endl;
+-    kn5::Vec3   steer = { 0, 0, 0 };
++
+     kn5::Node* steerNode = model.findNode(kn5::Node::Transform, "STEER_LR");
++    kn5::Node* histeerNode = model.findNode(kn5::Node::Transform, "STEER_HR");
+ 
+-    if (steerNode)
++    //if (steerNode)
++        fout << "\t\t\t<attstr name=\"model\" val=\"steer.acc\"/>" << std::endl;
++
++    if (histeerNode)
++        fout << "\t\t\t<attstr name=\"hi res model\" val=\"histeer.acc\"/>" << std::endl;
++
++    if (steerNode != nullptr || histeerNode != nullptr)
+     {
+-        steer[0] = steerNode->m_matrix.m_data[3][2];
+-        steer[1] = steerNode->m_matrix.m_data[3][0];
+-        steer[2] = steerNode->m_matrix.m_data[3][1];
++        kn5::Node* node = (histeerNode != nullptr) ? histeerNode : steerNode;
++
++        fout << "\t\t\t<attnum name=\"xpos\" val=\"" << node->m_matrix.m_data[3][2] << "\"/>" << std::endl;
++        fout << "\t\t\t<attnum name=\"ypos\" val=\"" << node->m_matrix.m_data[3][0] << "\"/>" << std::endl;
++        fout << "\t\t\t<attnum name=\"zpos\" val=\"" << node->m_matrix.m_data[3][1] << "\"/>" << std::endl;
+ 
+-        fout << "\t\t\t<attnum name=\"xpos\" val=\"" << steer[0] << "\"/>" << std::endl;
+-        fout << "\t\t\t<attnum name=\"ypos\" val=\"" << steer[1] << "\"/>" << std::endl;
+-        fout << "\t\t\t<attnum name=\"zpos\" val=\"" << steer[2] << "\"/>" << std::endl;
++        float rotX, rotY, rotZ;
++
++        node->m_matrix.getEulerAngles(rotX, rotY, rotZ);
++
++	    fout << "\t\t\t<attnum name=\"angle\" val=\"" << rotX << "\"/>" << std::endl;
+     }
+-//	<attnum name="angle" val="0"/>
++
+     fout << "\t\t</section>" << std::endl;
+     fout << "\t\t<section name=\"Driver\">" << std::endl;
+     fout << "\t\t</section>" << std::endl;
+@@ -531,7 +543,7 @@ int main(int argc, char* argv[])
+                 outputDirectory = argv[i];
+                 writeTextures = true;
+                 convertToPNG = true;
+-                deleteDDS = true;
++                //deleteDDS = true;
+                 writeModel = true;
+                 extractCarParts = true;
+                 writeCarConfig = true;

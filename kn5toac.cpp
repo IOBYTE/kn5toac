@@ -28,6 +28,7 @@ namespace
 
         node.m_matrix.makeIdentity();
 
+        node.removeInactiveNodes();
         node.transform(xform);
 
         model.writeAc3d(file, node, true, file.find(".acc") != std::string::npos, true);
@@ -1060,6 +1061,7 @@ int main(int argc, char* argv[])
             }
         }
 
+        model.removeInactiveNodes();
         model.transform(xform);
         model.removeEmptyNodes();
 
