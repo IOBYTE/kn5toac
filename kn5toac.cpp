@@ -336,8 +336,8 @@ namespace
         //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Steer\">" << std::endl;
-        //	<attnum name="steer lock" unit="deg" min="1" max="21" val="21"/>
-        //	<attnum name="steering wheel rotation" unit="deg" min="5.456741" max="114.591568" val="114.591560"/>
+        fout << "\t\t<attnum name=\"steer lock\" unit=\"deg\" val=\"" << (car.getFloatValue("CONTROLS", "STEER_LOCK") / car.getFloatValue("CONTROLS", "STEER_RATIO")) << "\"/>" << std::endl;
+        fout << "\t\t<attnum name=\"steering wheel rotation\" unit=\"deg\" val=\"" << (car.getFloatValue("CONTROLS", "STEER_LOCK") * 2) << "\"/>" << std::endl;
         //	<attnum name="max steer speed" unit="deg/s" min="1" max="360" val="360"/>
         fout << "\t</section>" << std::endl;
 
