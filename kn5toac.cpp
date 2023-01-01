@@ -2,6 +2,7 @@
 #include "ini.h"
 #include "lut.h"
 #include "acd.h"
+#include "knh.h"
 
 #include <fstream>
 #include <filesystem>
@@ -632,11 +633,15 @@ int main(int argc, char* argv[])
     bool        writeCmake = false;
     bool        deleteData = true;
     bool        writeSkins = false;
+    bool        writeDriver = false;
+    bool        dumpInputDriver = false;
+    bool        dumpDriverKnh = false;
     std::string category;
     std::string inputDirectory;
     std::string outputDirectory;
     std::string inputFileName;
     std::string skinFileName;
+    std::string driverDirectory;
 
     for (int i = 1; i < argc; i++)
     {
@@ -660,6 +665,8 @@ int main(int argc, char* argv[])
             dumpCollider = true;
             deleteData = false;
             deleteDDS = false;
+            dumpInputDriver = true;
+            dumpDriverKnh = true;
         }
         else if (arg == "-h")
         {
@@ -705,6 +712,7 @@ int main(int argc, char* argv[])
                 writeCarConfig = true;
                 useDiffuse = true;
                 writeCmake = true;
+                //writeDriver = true;
             }
             else
             {
@@ -1153,6 +1161,129 @@ int main(int argc, char* argv[])
 
                         std::filesystem::copy(previewPath, liveryPreviewPath, std::filesystem::copy_options::overwrite_existing);
                     }
+                }
+            }
+        }
+    }
+
+    if (writeDriver)
+    {
+        std::filesystem::path drive3dPath = dataDirectoryPath;
+
+        drive3dPath.append("driver3d.ini");
+
+        if (std::filesystem::exists(drive3dPath))
+        {
+            ini driver3d(drive3dPath.string());
+
+            std::string driverFileName = driver3d.getValue("MODEL", "NAME");
+
+            driverFileName += ".kn5";
+
+            std::filesystem::path driverGraphicsPath; // = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\assettocorsa\\content\\driver";
+
+            if (driverDirectory.empty())
+            {
+                // assume assetto corsa directory structure
+                driverGraphicsPath = inputPath;
+                driverGraphicsPath.append("../../driver");
+            }
+            else
+                driverGraphicsPath = driverDirectory;
+
+            driverGraphicsPath.append(driverFileName);
+
+            if (std::filesystem::exists(driverGraphicsPath))
+            {
+                kn5 driverModel;
+
+                try
+                {
+                    driverModel.read(driverGraphicsPath.string());
+                }
+                catch (std::ifstream::failure& e)
+                {
+                    std::cerr << "Error reading: " << driverGraphicsPath.string() << " : " << e.code().message() << std::endl;
+                    return EXIT_FAILURE;
+                }
+                catch (std::runtime_error& e)
+                {
+                    std::cerr << "Error reading: " << driverGraphicsPath.string() << " : " << e.what() << std::endl;
+                    return EXIT_FAILURE;
+                }
+
+                if (dumpInputDriver)
+                {
+                    std::filesystem::path  driverDumpPath = outputPath;
+
+                    driverDumpPath.append(driverFileName + ".dump");
+
+                    std::ofstream of(driverDumpPath.string());
+
+                    if (of)
+                        driverModel.dump(of);
+
+                    of.close();
+                }
+
+                std::filesystem::path driverPath = inputPath;
+
+                driverPath.append("driver_base_pos.knh");
+
+                if (std::filesystem::exists(driverPath))
+                {
+                    knh driver(driverPath.string());
+
+                    if (dumpDriverKnh)
+                    {
+                        std::filesystem::path   driverDumpPath = outputPath;
+
+                        driverDumpPath.append("driver_base_pos.knh.dump");
+
+                        std::ofstream of(driverDumpPath.string());
+
+                        if (of)
+                            driver.dump(of);
+
+                        of.close();
+                    }
+
+                    // TODO: position driver from knh file
+
+                    kn5::Matrix xform;
+
+                    xform.m_data[0][0] = 0;
+                    xform.m_data[0][1] = 0;
+                    xform.m_data[0][2] = -1;
+                    xform.m_data[0][3] = 0;
+
+                    xform.m_data[1][0] = 0;
+                    xform.m_data[1][1] = 1;
+                    xform.m_data[1][2] = 0;
+                    xform.m_data[1][3] = 0;
+
+                    xform.m_data[2][0] = 1;
+                    xform.m_data[2][1] = 0;
+                    xform.m_data[2][2] = 0;
+                    xform.m_data[2][3] = 0;
+
+                    xform.m_data[3][0] = 0;
+                    xform.m_data[3][1] = 0;
+                    xform.m_data[3][2] = 0;
+                    xform.m_data[3][3] = 1;
+
+                    driverModel.removeInactiveNodes();
+                    driverModel.transform(xform);
+                    driverModel.removeEmptyNodes();
+
+                    std::filesystem::path driverOutFilePath = outputPath;
+
+                    driverOutFilePath.append("driver.ac");
+
+                    driverModel.writeAc3d(driverOutFilePath.string(), true, false, true);
+
+                    if (writeTextures)
+                        driverModel.writeTextures(outputPath.string(), convertToPNG, deleteDDS);
                 }
             }
         }
