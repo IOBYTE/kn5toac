@@ -158,13 +158,18 @@ public:
     {
         struct Vertex
         {
+            bool    m_animated = false;
             Vec3    m_position = { 0, 0, 0 };
             Vec3    m_normal = { 0, 0, 0 };
             Vec2    m_texture = { 0 , 0 };
             Vec3    m_tangent = { 0, 0, 0 };
 
+            // animated  only
+            Vec4    m_weights = { 0, 0, 0, 0 };
+            Vec4    m_indices = { 0, 0, 0, 0 };
+
             Vertex() = default;
-            void read(std::istream& stream);
+            void read(std::istream& stream, bool animated);
             void dump(std::ostream& stream, const std::string& indent = "") const;
             void transform(const Matrix& matrix);
         };
@@ -187,16 +192,6 @@ public:
             void dump(std::ostream& stream, const std::string& indent = "") const;
         };
 
-        struct AnamatedVertex : public Vertex
-        {
-            Vec4    m_weights = { 0, 0, 0, 0 };
-            Vec4    m_indices = { 0, 0, 0, 0 };
-
-            AnamatedVertex() = default;
-            void read(std::istream& stream);
-            void dump(std::ostream& stream, const std::string& indent = "") const;
-        };
-
         enum NodeType : int32_t { NotSet, Transform, Mesh, SkinnedMesh };
 
         static std::string to_string(NodeType nodeType);
@@ -210,7 +205,6 @@ public:
         bool                        m_transparent = false;
         std::vector<Bone>           m_bones;
         std::vector<Vertex>         m_vertices;
-        std::vector<AnamatedVertex> m_anamatedVertices;
         std::vector<uint16_t>       m_indices;
         int                         m_materialID = 0;
         uint32_t                    m_layer = 0;
@@ -224,8 +218,6 @@ public:
         void read(std::istream& stream, Node* parent);
         void dump(std::ostream& stream, const std::string& indent = "") const;
         void readTranslation(std::istream& stream);
-        void readMesh(std::istream& stream);
-        void readAnimatedMesh(std::istream& stream);
         void transform(const Matrix& matrix);
         bool removeChild(Node* child);
         void removeEmptyNodes();

@@ -712,7 +712,7 @@ int main(int argc, char* argv[])
                 writeCarConfig = true;
                 useDiffuse = true;
                 writeCmake = true;
-                //writeDriver = true;
+                writeDriver = true;
             }
             else
             {

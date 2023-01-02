@@ -335,12 +335,19 @@ std::string kn5::Node::to_string(NodeType nodeType)
     return "Unknown(" + std::to_string(nodeType) + ")";
 }
 
-void kn5::Node::Vertex::read(std::istream& stream)
+void kn5::Node::Vertex::read(std::istream& stream, bool animated)
 {
+    m_animated = animated;
     m_position = readVec3(stream);
     m_normal = readVec3(stream);
     m_texture = readVec2(stream);
     m_tangent = readVec3(stream);
+
+    if (m_animated)
+    {
+        m_weights = readVec4(stream);
+        m_indices = readVec4(stream);
+    }
 }
 
 void kn5::Node::Vertex::dump(std::ostream& stream, const std::string& indent) const
@@ -349,6 +356,12 @@ void kn5::Node::Vertex::dump(std::ostream& stream, const std::string& indent) co
     stream << indent << "normal:   " << m_normal[0] << ", " << m_normal[1] << ", " << m_normal[2] << std::endl;
     stream << indent << "texture:  " << m_texture[0] << ", " << m_texture[1] << std::endl;
     stream << indent << "tangent:  " << m_tangent[0] << ", " << m_tangent[1] << ", " << m_tangent[2] << std::endl;
+
+    if (m_animated)
+    {
+        stream << indent << "weights:  " << m_weights[0] << ", " << m_weights[1] << ", " << m_weights[2] << ", " << m_weights[3] << std::endl;
+        stream << indent << "indices:  " << m_indices[0] << ", " << m_indices[1] << ", " << m_indices[2] << ", " << m_indices[3] << std::endl;
+    }
 }
 
 void kn5::Node::Vertex::transform(const Matrix& matrix)
@@ -422,22 +435,6 @@ void kn5::Node::Bone::dump(std::ostream& stream, const std::string& indent) cons
     m_matrix.dump(stream, indent);
 }
 
-void kn5::Node::AnamatedVertex::read(std::istream& stream)
-{
-    Vertex::read(stream);
-
-    m_weights = readVec4(stream);
-    m_indices = readVec4(stream);
-}
-
-void kn5::Node::AnamatedVertex::dump(std::ostream& stream, const std::string& indent) const
-{
-    Vertex::dump(stream, indent);
-
-    stream << indent << "weights:  " << m_weights[0] << ", " << m_weights[1] << ", " << m_weights[2] << ", " << m_weights[3] << std::endl;
-    stream << indent << "indices:  " << m_indices[0] << ", " << m_indices[1] << ", " << m_indices[2] << ", " << m_indices[3] << std::endl;
-}
-
 void kn5::Node::read(std::istream& stream, Node* parent)
 {
     m_parent = parent;
@@ -448,17 +445,44 @@ void kn5::Node::read(std::istream& stream, Node* parent)
 
     m_active = readBool(stream);
 
-    switch (m_type)
+    if (m_type == Transform)
     {
-    case Transform:
-        readTranslation(stream);
-        break;
-    case Mesh:
-        readMesh(stream);
-        break;
-    case SkinnedMesh:
-        readAnimatedMesh(stream);
-        break;
+        m_matrix.read(stream);
+    }
+    else
+    {
+        m_castShadows = readBool(stream);
+        m_visible = readBool(stream);
+        m_transparent = readBool(stream);
+
+        if (m_type == SkinnedMesh)
+        {
+            m_bones.resize(readInt32(stream));
+
+            for (auto& bone : m_bones)
+                bone.read(stream);
+        }
+
+        m_vertices.resize(readInt32(stream));
+
+        for (auto& vertex : m_vertices)
+            vertex.read(stream, m_type == SkinnedMesh);
+
+        m_indices.resize(readInt32(stream));
+
+        for (auto& index : m_indices)
+            index = readUint16(stream);
+
+        m_materialID = readInt32(stream);
+        m_layer = readUint32(stream);
+        m_lodIn = readFloat(stream);
+        m_lodOut = readFloat(stream);
+
+        if (m_type == Mesh)
+        {
+            m_boundingSphere.read(stream);
+            m_renderable = readBool(stream);
+        }
     }
 
     for (auto & child : m_children)
@@ -470,71 +494,12 @@ void kn5::Node::readTranslation(std::istream& stream)
     m_matrix.read(stream);
 }
 
-void kn5::Node::readMesh(std::istream& stream)
-{
-    m_castShadows = readBool(stream);
-    m_visible = readBool(stream);
-    m_transparent = readBool(stream);
-
-    m_vertices.resize(readInt32(stream));
-
-    for (auto & vertex : m_vertices)
-        vertex.read(stream);
-
-    m_indices.resize(readInt32(stream));
-
-    for (auto & index : m_indices)
-        index = readUint16(stream);
-
-    m_materialID = readInt32(stream);
-    m_layer = readUint32(stream);
-    m_lodIn = readFloat(stream);
-    m_lodOut = readFloat(stream);
-    m_boundingSphere.read(stream);
-    m_renderable = readBool(stream);
-}
-
-void kn5::Node::readAnimatedMesh(std::istream& stream)
-{
-    m_castShadows = readBool(stream);
-    m_visible = readBool(stream);
-    m_transparent = readBool(stream);
-
-    m_bones.resize(readInt32(stream));
-
-    for (auto& bone : m_bones)
-        bone.read(stream);
-
-    m_anamatedVertices.resize(readInt32(stream));
-
-    for (auto& vertex : m_anamatedVertices)
-        vertex.read(stream);
-
-    m_indices.resize(readInt32(stream));
-
-    for (auto& index : m_indices)
-        index = readUint16(stream);
-
-    m_materialID = readInt32(stream);
-    m_layer = readUint32(stream);
-    m_lodIn = readFloat(stream);
-    m_lodOut = readFloat(stream);
-}
-
 void kn5::Node::transform(const Matrix& matrix)
 {
     if (m_type != Transform)
     {
-        if (m_type == Mesh)
-        {
-            for (auto& vertex : m_vertices)
-                vertex.transform(matrix);
-        }
-        else
-        {
-            for (auto& vertex : m_anamatedVertices)
-                vertex.transform(matrix);
-        }
+        for (auto& vertex : m_vertices)
+            vertex.transform(matrix);
     }
     else
     {
@@ -590,15 +555,23 @@ void kn5::Node::dump(std::ostream& stream, const std::string& indent) const
     stream << indent << "name:        " << m_name << std::endl;
     stream << indent << "active:      " << (m_active ? "true" : "false") << std::endl;
 
-    switch (m_type)
-    {
-    case 1:
+    if (m_type == Transform)
         m_matrix.dump(stream, indent);
-        break;
-    case 2:
+    else
+    {
         stream << indent << "castShadows: " << (m_castShadows ? "true" : "false") << std::endl;
         stream << indent << "visible:     " << (m_visible ? "true" : "false") << std::endl;
         stream << indent << "transparent: " << (m_transparent ? "true" : "false") << std::endl;
+
+        if (m_type == SkinnedMesh)
+        {
+            stream << indent << "bones:       " << m_bones.size() << std::endl;
+            for (size_t i = 0; i < m_bones.size(); i++)
+            {
+                stream << indent << "bones[" << i << "]" << std::endl;
+                m_bones[i].dump(stream, indent + "  ");
+            }
+        }
 
         stream << indent << "vertices:    " << m_vertices.size() << std::endl;
         for (size_t i = 0; i < m_vertices.size(); i++)
@@ -615,38 +588,14 @@ void kn5::Node::dump(std::ostream& stream, const std::string& indent) const
         stream << indent << "layer:      " << m_layer << std::endl;
         stream << indent << "lodIn:      " << m_lodIn << std::endl;
         stream << indent << "lodOut:     " << m_lodOut << std::endl;
-        stream << indent << "boundingSphere:" << std::endl;
-        m_boundingSphere.dump(stream, indent + "  ");
-        stream << indent << "renderable: " << (m_renderable ? "true" : "false") << std::endl;
-        break;
-    case 3:
-        stream << indent << "castShadows: " << (m_castShadows ? "true" : "false") << std::endl;
-        stream << indent << "visible:     " << (m_visible ? "true" : "false") << std::endl;
-        stream << indent << "transparent: " << (m_transparent ? "true" : "false") << std::endl;
 
-        stream << indent << "bones:       " << m_bones.size() << std::endl;
-        for (size_t i = 0; i < m_bones.size(); i++)
+        if (m_type == Mesh)
         {
-            stream << indent << "bones[" << i << "]" << std::endl;
-            m_bones[i].dump(stream, indent + "  ");
+            stream << indent << "boundingSphere:" << std::endl;
+            m_boundingSphere.dump(stream, indent + "  ");
+            stream << indent << "renderable: " << (m_renderable ? "true" : "false") << std::endl;
+
         }
-
-        stream << indent << "anamatedVertices:    " << m_anamatedVertices.size() << std::endl;
-        for (size_t i = 0; i < m_anamatedVertices.size(); i++)
-        {
-            stream << indent << "anamatedVertices[" << i << "]" << std::endl;
-            m_anamatedVertices[i].dump(stream, indent + "  ");
-        }
-
-        stream << indent << "indices:    " << m_indices.size() << std::endl;
-        for (size_t i = 0; i < m_indices.size(); i++)
-            stream << indent << "  indices[" << i << "]: " << m_indices[i] << std::endl;
-
-        stream << indent << "materialID: " << m_materialID << std::endl;
-        stream << indent << "layer:      " << m_layer << std::endl;
-        stream << indent << "lodIn:      " << m_lodIn << std::endl;
-        stream << indent << "lodOut:     " << m_lodOut << std::endl;
-        break;
     }
 
     stream << indent << "children: " << m_children.size() << std::endl;
@@ -1126,18 +1075,9 @@ void kn5::writeAc3dObject(std::ostream& fout, const kn5::Node& node, const std::
 
                 surface.m_refs[j].m_index = index;
 
-                if (node.m_type == Node::Mesh)
-                {
-                    surface.m_refs[j].m_vertex = node.m_vertices[index].m_position;
-                    surface.m_refs[j].m_uv[0] = node.m_vertices[index].m_texture[0] * uvMult;
-                    surface.m_refs[j].m_uv[1] = -node.m_vertices[index].m_texture[1] * uvMult;
-                }
-                else
-                {
-                    surface.m_refs[j].m_vertex = node.m_anamatedVertices[index].m_position;
-                    surface.m_refs[j].m_uv[0] = node.m_anamatedVertices[index].m_texture[0] * uvMult;
-                    surface.m_refs[j].m_uv[1] = -node.m_anamatedVertices[index].m_texture[1] * uvMult;
-                }
+                surface.m_refs[j].m_vertex = node.m_vertices[index].m_position;
+                surface.m_refs[j].m_uv[0] = node.m_vertices[index].m_texture[0] * uvMult;
+                surface.m_refs[j].m_uv[1] = -node.m_vertices[index].m_texture[1] * uvMult;
             }
 
             if (surface.collinearVertices())
