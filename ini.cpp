@@ -61,7 +61,7 @@ void ini::read(const std::string& fileName)
     stream.close();
 }
 
-void ini::dump() const
+void ini::dump(std::ostream& stream) const
 {
     for (const auto& section : sections)
     {
@@ -72,6 +72,22 @@ void ini::dump() const
             std::cout << entry.first << " = " << entry.second << std::endl;
         }
     }
+}
+
+bool ini::dump(const std::string& fileName) const
+{
+    std::ofstream	of(fileName);
+
+    if (of)
+    {
+        dump(of);
+
+        of.close();
+
+        return true;
+    }
+
+    return false;
 }
 
 std::string ini::getValue(const std::string& section, const std::string& key) const

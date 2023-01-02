@@ -13,6 +13,8 @@ class acd
         std::string         m_name;
         std::vector<int>    m_rawData;
         std::string         m_data;
+
+        void dump(std::ostream& stream) const;
     };
 
     std::list<Entry>        m_entries;
@@ -29,7 +31,8 @@ public:
 
     void read(const std::string& fileName);
     void writeEntries(const std::string& directory) const;
-    void dump() const;
+    void dump(std::ostream& stream) const;
+    bool dump(const std::string& fileName) const;
 };
 
 #endif

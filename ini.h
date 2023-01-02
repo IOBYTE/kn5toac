@@ -18,7 +18,8 @@ public:
     }
 
     void read(const std::string& fileName);
-    void dump() const;
+    void dump(std::ostream& stream) const;
+    bool dump(const std::string& fileName) const;
     std::string getValue(const std::string& section, const std::string& key) const;
     int getIntValue(const std::string& section, const std::string& key) const;
     float getFloatValue(const std::string& section, const std::string& key) const;

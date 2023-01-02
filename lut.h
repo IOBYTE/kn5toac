@@ -18,7 +18,8 @@ public:
     }
 
     void read(const std::string& fileName);
-    void dump() const;
+    void dump(std::ostream& stream) const;
+    bool dump(const std::string& fileName) const;
     const std::vector<std::pair<float, float>>& getValues() const
     {
         return m_entries;

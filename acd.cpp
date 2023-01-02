@@ -1,32 +1,8 @@
 #include "acd.h"
+#include "kn5.h"
 
 #include <iostream>
 #include <fstream>
-
-namespace
-{
-	int32_t readInt32(std::istream& stream)
-	{
-		int32_t value;
-		stream.read(reinterpret_cast<char*>(&value), sizeof(int32_t));
-		return value;
-	}
-
-	std::string readString(std::istream& stream, size_t length)
-	{
-		char* text = new char[length + 1];
-		text[length] = 0;
-		stream.read(text, length);
-		std::string string(text, length);
-		delete[] text;
-		return string;
-	}
-
-	std::string readString(std::istream& stream)
-	{
-		return readString(stream, readInt32(stream));
-	}
-}
 
 void acd::read(const std::string& fileName)
 {
@@ -41,9 +17,9 @@ void acd::read(const std::string& fileName)
 	{
 		Entry   entry;
 
-		entry.m_name = readString(stream);
+		entry.m_name = kn5::readString(stream);
 
-		entry.m_rawData.resize(readInt32(stream));
+		entry.m_rawData.resize(kn5::readInt32(stream));
 		stream.read(reinterpret_cast<char*>(entry.m_rawData.data()), entry.m_rawData.size() * 4);
 
 		entry.m_data.reserve(entry.m_rawData.size());
@@ -58,8 +34,39 @@ void acd::read(const std::string& fileName)
 	}
 }
 
-void acd::dump() const
+void acd::dump(std::ostream& stream) const
 {
+	stream << "key:     " << m_key << std::endl;
+	stream << "entries: " << m_entries.size() << std::endl;
+	size_t count = 0;
+	for (const auto& entry : m_entries)
+	{
+		stream << "  entries[" << count++ << "]" << std::endl;
+		entry.dump(stream);
+	}
+}
+
+void acd::Entry::dump(std::ostream& stream) const
+{
+	stream << "    name:    " << m_name << std::endl;
+	stream << "    rawData: " << m_rawData.size() << std::endl;
+	stream << "    data:    " << m_data.size() << std::endl;
+}
+
+bool acd::dump(const std::string& fileName) const
+{
+	std::ofstream	of(fileName);
+
+	if (of)
+	{
+		dump(of);
+
+		of.close();
+
+		return true;
+	}
+
+	return false;
 }
 
 void acd::writeEntries(const std::string& directory) const

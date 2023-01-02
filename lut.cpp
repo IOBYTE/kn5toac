@@ -29,12 +29,28 @@ void lut::read(const std::string& fileName)
     fin.close();
 }
 
-void lut::dump() const
+void lut::dump(std::ostream& stream) const
 {
     for (const auto& entry : m_entries)
     {
         std::cout << entry.first << " | " << entry.second << std::endl;
     }
+}
+
+bool lut::dump(const std::string& fileName) const
+{
+    std::ofstream	of(fileName);
+
+    if (of)
+    {
+        dump(of);
+
+        of.close();
+
+        return true;
+    }
+
+    return false;
 }
 
 float lut::lookup(float first) const
