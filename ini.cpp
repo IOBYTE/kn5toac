@@ -7,6 +7,8 @@
 
 void ini::read(const std::string& fileName)
 {
+    m_fileName = fileName;
+
     std::ifstream stream(fileName, std::ios::binary);
 
     if (!stream)
@@ -54,7 +56,7 @@ void ini::read(const std::string& fileName)
             if (comment != std::string::npos)
                 value = rtrim(value.substr(0, comment));
 
-            sections[currentSection].insert(std::pair(key, value));
+            m_sections[currentSection].insert(std::pair(key, value));
         }
     }
 
@@ -63,14 +65,14 @@ void ini::read(const std::string& fileName)
 
 void ini::dump(std::ostream& stream) const
 {
-    for (const auto& section : sections)
+    stream << "fileName: " << m_fileName << std::endl;
+
+    for (const auto& section : m_sections)
     {
-        std::cout << "[" << section.first << "]" << std::endl;
+        stream << "[" << section.first << "]" << std::endl;
 
         for (const auto& entry : section.second)
-        {
-            std::cout << entry.first << " = " << entry.second << std::endl;
-        }
+            stream << entry.first << " = " << entry.second << std::endl;
     }
 }
 
@@ -94,9 +96,9 @@ std::string ini::getValue(const std::string& section, const std::string& key) co
 {
     std::string value;
 
-    auto it = sections.find(section);
+    auto it = m_sections.find(section);
 
-    if (it != sections.end())
+    if (it != m_sections.end())
     {
         auto it2 = it->second.find(key);
 
@@ -132,5 +134,5 @@ std::array<float, 3> ini::getFloatArray3Value(const std::string& section, const 
 
 bool ini::hasSection(const std::string& section) const
 {
-    return sections.find(section) != sections.end();
+    return m_sections.find(section) != m_sections.end();
 }

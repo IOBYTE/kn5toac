@@ -719,5 +719,3 @@ const kn5::Node* kn5::findNode(Node::NodeType type, const std::string& name) con
 {
     return findNode(m_node, type, name);
 }
-
-

@@ -8,7 +8,8 @@
 class ini
 {
 private:
-    std::map<std::string, std::map<std::string, std::string>> sections;
+    std::string                                               m_fileName;
+    std::map<std::string, std::map<std::string, std::string>> m_sections;
 
 public:
     ini() = default;
@@ -25,6 +26,14 @@ public:
     float getFloatValue(const std::string& section, const std::string& key) const;
     std::array<float,3> getFloatArray3Value(const std::string& section, const std::string& key) const;
     bool hasSection(const std::string& section) const;
+    const std::string& getFileName() const
+    {
+        return m_fileName;
+    }
+    bool hasSections() const
+    {
+        return m_sections.size() > 0;
+    }
 };
 
 #endif
