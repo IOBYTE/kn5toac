@@ -6,18 +6,6 @@
 #include <list>
 #include <limits>
 
-namespace
-{
-    void quote(std::string& string)
-    {
-        if (string.find(' ') != std::string::npos)
-        {
-            string.insert(0, 1, '"');
-            string.append(1, '"');
-        }
-    }
-}
-
 int32_t kn5::readInt32(std::istream& stream)
 {
     int32_t value;
