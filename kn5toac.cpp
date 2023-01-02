@@ -18,28 +18,6 @@ namespace
         }
     }
 
-    bool extract(kn5& model, const std::string& name, const kn5::Matrix& xform, const std::string& file)
-    {
-        kn5::Node* transformNode = model.findNode(kn5::Node::Transform, name);
-
-        if (transformNode == nullptr)
-            return false;
-
-        kn5::Node   node = *transformNode;
-
-        node.m_matrix.makeIdentity();
-
-        node.removeInactiveNodes();
-        node.transform(xform);
-
-        model.writeAc3d(file, node, true, file.find(".acc") != std::string::npos, true);
-
-        if (transformNode->m_parent)
-            transformNode->m_parent->removeChild(transformNode);
-
-        return true;
-    }
-
     void remove(kn5& model, kn5::Node::NodeType type, const std::string& name)
     {
         kn5::Node* node = model.findNode(type, name);
@@ -606,6 +584,404 @@ namespace
         fout.close();
     }
 
+    void writeTextureFiles(const kn5 &model, const std::string& directory, bool convertToPNG, bool deleteDDS)
+    {
+        if (!std::filesystem::exists(directory))
+        {
+            if (!std::filesystem::create_directory(directory))
+                throw std::runtime_error("Couldn't create directory: " + directory);
+        }
+
+        std::set<std::string>   filesToDelete;
+
+        for (size_t i = 0; i < model.m_textures.size(); i++)
+        {
+            std::filesystem::path texturePath(directory);
+
+            texturePath.append(model.m_textures[i].m_name);
+
+            std::string texturePathString = texturePath.string();
+
+            if (!std::filesystem::exists(texturePath))
+            {
+                std::ofstream   fout(texturePath.string(), std::ios::binary);
+
+                if (!fout)
+                    throw std::runtime_error("Couldn't create texture: " + texturePathString);
+
+                fout.write(model.m_textures[i].m_data.data(), model.m_textures[i].m_data.size());
+
+                fout.close();
+            }
+
+            if (convertToPNG && (texturePathString.find(".png") == std::string::npos && texturePathString.find(".PNG") == std::string::npos))
+            {
+                std::string png;
+
+                size_t extension = texturePathString.find(".dds");
+
+                if (extension != std::string::npos)
+                    png = texturePathString.substr(0, extension) + ".png";
+                else if ((extension = texturePathString.find(".DDS")) != std::string::npos)
+                    png = texturePathString.substr(0, extension) + ".png";
+
+                if (!png.empty() && !std::filesystem::exists(png))
+                {
+                    filesToDelete.insert(texturePathString);
+
+                    quote(texturePathString);
+
+                    std::string command("magick convert " + texturePathString + " ");
+
+                    for (const auto& material : model.m_materials)
+                    {
+                        if (material.m_textureMappings[0].m_textureName == model.m_textures[i].m_name)
+                        {
+                            if (material.m_alphaBlendMode == kn5::Material::Opaque)
+                            {
+                                command += "-alpha off ";
+
+                                break;
+                            }
+                        }
+                    }
+
+                    quote(png);
+
+                    command += png;
+
+                    if (system(command.c_str()) != 0)
+                        std::cerr << "failed to convert " << texturePathString << " to " << png << std::endl;
+                }
+            }
+        }
+
+        for (const auto& file : filesToDelete)
+            std::filesystem::remove(file);
+    }
+
+    void writeAc3dMaterials(const kn5& model, std::ostream& fout, const kn5::Node& node, const std::set<int>& usedMaterialIDs)
+    {
+        for (auto materialID : usedMaterialIDs)
+        {
+            const kn5::Material& material = model.m_materials[materialID];
+
+            std::string materialName = material.m_name;
+
+            for (size_t i = 0; i < materialName.size(); i++)
+            {
+                if (materialName[i] == ' ')
+                    materialName[i] = '_';
+            }
+
+            fout << "MATERIAL " << "\"" << materialName << "\"";
+
+            const kn5::ShaderProperty* property = material.findShaderProperty("ksDiffuse");
+
+            if (property != nullptr)
+            {
+                const float rgb = std::clamp(property->m_value, 0.0f, 1.0f);
+                fout << " rgb " << rgb << " " << rgb << " " << rgb;
+            }
+            else
+                fout << " rgb 1 1 1";
+
+            property = material.findShaderProperty("ksAmbient");
+
+            if (property != nullptr)
+            {
+                const float amb = std::clamp(property->m_value, 0.0f, 1.0f);
+                fout << "  amb " << amb << " " << amb << " " << amb;
+            }
+            else
+                fout << "  amb 1 1 1";
+
+            property = material.findShaderProperty("ksEmissive");
+
+            if (property != nullptr)
+            {
+                const float emis = std::clamp(property->m_value, 0.0f, 1.0f);
+                fout << "  emis " << emis << " " << emis << " " << emis;
+            }
+            else
+                fout << "  emis 1 1 1";
+
+            property = material.findShaderProperty("ksSpecular");
+
+            if (property != nullptr)
+            {
+                const float spec = std::clamp(property->m_value, 0.0f, 1.0f);
+                fout << "  spec " << spec << " " << spec << " " << spec;
+            }
+            else
+                fout << "  spec 1 1 1";
+
+            property = material.findShaderProperty("ksSpecularEXP");  // FIXME is this the right parameter?
+
+            if (property != nullptr)
+            {
+                // FIXME should this be scaled?
+                const float shi = std::clamp(property->m_value, 0.0f, 128.0f);
+                fout << "  shi " << static_cast<int>(shi);
+            }
+            else
+                fout << "  shi 0";
+
+            property = material.findShaderProperty("ksAlphaRef");  // FIXME is this the right parameter?
+
+            if (property != nullptr)
+            {
+                const float trans = std::clamp(property->m_value, 0.0f, 1.0f);
+                fout << "  trans " << trans;
+            }
+            else
+                fout << "  trans 0";
+
+            fout << std::endl;
+        }
+    }
+
+    int getNewMaterialID(int materialID, const std::set<int>& usedMaterialIDs)
+    {
+        int newMaterialID = 0;
+
+        for (auto id : usedMaterialIDs)
+        {
+            if (id == materialID)
+                return newMaterialID;
+
+            newMaterialID++;
+        }
+        return 0;
+    }
+
+    void writeAc3dObject(const kn5& model, std::ostream& fout, const kn5::Node& node, const std::set<int>& usedMaterialIDs, bool convertToPNG, bool outputACC, bool useDiffuse)
+    {
+        if (node.m_type == kn5::Node::Transform)
+        {
+            fout << "OBJECT group" << std::endl;
+            fout << "name \"" << node.m_name << "\"" << std::endl;
+
+            if (node.m_matrix.isRotation())
+            {
+                fout << "rot " << node.m_matrix.m_data[0][0] << " " << node.m_matrix.m_data[0][1] << " " << node.m_matrix.m_data[0][2];
+                fout << " " << node.m_matrix.m_data[1][0] << " " << node.m_matrix.m_data[1][1] << " " << node.m_matrix.m_data[1][2];
+                fout << " " << node.m_matrix.m_data[2][0] << " " << node.m_matrix.m_data[2][1] << " " << node.m_matrix.m_data[2][2] << std::endl;
+            }
+
+            if (node.m_matrix.isTranslation())
+                fout << "loc " << node.m_matrix.m_data[3][0] << " " << node.m_matrix.m_data[3][1] << " " << node.m_matrix.m_data[3][2] << std::endl;
+        }
+        else if (node.m_type == kn5::Node::Mesh || node.m_type == kn5::Node::SkinnedMesh)
+        {
+            fout << "OBJECT poly" << std::endl;
+            fout << "name \"" << node.m_name << "\"" << std::endl;
+
+            std::string texture;
+            const kn5::TextureMapping* txDiffuse = model.m_materials[node.m_materialID].findTextureMapping("txDiffuse");
+
+            if (useDiffuse)
+                texture = txDiffuse->m_textureName;
+            else
+            {
+                const kn5::ShaderProperty* useDetail = model.m_materials[node.m_materialID].findShaderProperty("useDetail");
+                const kn5::TextureMapping* txDetail = model.m_materials[node.m_materialID].findTextureMapping("txDetail");
+
+                texture = ((useDetail && useDetail != 0) && txDetail) ? txDetail->m_textureName : txDiffuse->m_textureName;
+            }
+
+            if (convertToPNG && (texture.find(".png") == std::string::npos && texture.find(".PNG") == std::string::npos))
+            {
+                const std::string png = texture;
+
+                size_t extension = texture.find(".dds");
+
+                if (extension != std::string::npos)
+                    texture = texture.substr(0, extension) + ".png";
+                else if ((extension = png.find(".DDS")) != std::string::npos)
+                    texture = texture.substr(0, extension) + ".png";
+            }
+
+            if (outputACC)
+            {
+                fout << "texture \"" << texture << "\" base" << std::endl;
+                fout << "texture empty_texture_no_mapping tiled" << std::endl;
+                fout << "texture empty_texture_no_mapping skids" << std::endl;
+                fout << "texture empty_texture_no_mapping shad" << std::endl;
+            }
+            else
+                fout << "texture \"" << texture << "\"" << std::endl;
+
+            fout << "numvert " << node.m_vertices.size() << std::endl;
+
+            for (const auto& vertex : node.m_vertices)
+            {
+                fout << vertex.m_position[0] << " " << vertex.m_position[1] << " " << vertex.m_position[2];
+
+                if (outputACC)
+                    fout << " " << vertex.m_normal[0] << " " << vertex.m_normal[1] << " " << vertex.m_normal[2];
+
+                fout << std::endl;
+            }
+
+            float uvMult = 1.0f;
+
+            if (useDiffuse)
+            {
+                const kn5::ShaderProperty* property = model.m_materials[node.m_materialID].findShaderProperty("diffuseMult");
+
+                if (property != nullptr)
+                    uvMult = property->m_value;
+            }
+            else
+            {
+                const kn5::ShaderProperty* property = model.m_materials[node.m_materialID].findShaderProperty("useDetail");
+
+                if (property == nullptr || property->m_value == 0.0f)
+                {
+                    property = model.m_materials[node.m_materialID].findShaderProperty("diffuseMult");
+
+                    if (property != nullptr)
+                        uvMult = property->m_value;
+                }
+                else
+                {
+                    property = model.m_materials[node.m_materialID].findShaderProperty("detailUVMultiplier");
+
+                    if (property != nullptr)
+                        uvMult = 1 / property->m_value;
+                }
+            }
+
+            struct Surface
+            {
+                int m_materialID = 0;
+
+                struct Ref
+                {
+                    int         m_index = 0;
+                    kn5::Vec3    m_vertex = { 0, 0, 0 };
+                    kn5::Vec2    m_uv = { 0, 0 };
+                };
+
+                std::array<Ref, 3>  m_refs;
+
+                bool collinearVertices() const
+                {
+                    constexpr float epsilon = std::numeric_limits<float>::epsilon();
+                    kn5::Vec3 v = kn5::Vec3{ m_refs[1].m_vertex - m_refs[0].m_vertex }.cross(m_refs[2].m_vertex - m_refs[0].m_vertex);
+                    return std::fabs(v[0]) < epsilon &&
+                        std::fabs(v[1]) < epsilon &&
+                        std::fabs(v[2]) < epsilon;
+                }
+            };
+
+            std::list<Surface>  surfaces;
+
+            for (size_t i = 0; i < node.m_indices.size(); i += 3)
+            {
+                Surface surface;
+
+                surface.m_materialID = getNewMaterialID(node.m_materialID, usedMaterialIDs);
+
+                for (size_t j = 0; j < 3; j++)
+                {
+                    const int index = node.m_indices[i + j];
+
+                    surface.m_refs[j].m_index = index;
+
+                    surface.m_refs[j].m_vertex = node.m_vertices[index].m_position;
+                    surface.m_refs[j].m_uv[0] = node.m_vertices[index].m_texture[0] * uvMult;
+                    surface.m_refs[j].m_uv[1] = -node.m_vertices[index].m_texture[1] * uvMult;
+                }
+
+                if (surface.collinearVertices())
+                {
+                    //std::cerr << "found collinear vertices" << std::endl;
+                    continue;
+                }
+
+                surfaces.push_back(surface);
+            }
+
+            fout << "numsurf " << surfaces.size() << std::endl;
+            for (const auto& surface : surfaces)
+            {
+                fout << "SURF 0x10" << std::endl;
+                fout << "mat " << surface.m_materialID << std::endl;
+                fout << "refs 3" << std::endl;
+                for (const auto& ref : surface.m_refs)
+                    fout << ref.m_index << " " << ref.m_uv[0] << " " << ref.m_uv[1] << std::endl;
+            }
+        }
+        else
+            return;
+
+        fout << "kids " << node.m_children.size() << std::endl;
+
+        for (const auto& child : node.m_children)
+            writeAc3dObject(model, fout, child, usedMaterialIDs, convertToPNG, outputACC, useDiffuse);
+    }
+
+    void getUsedMaterials(const kn5::Node& node, std::set<int>& usedMaterialIDs)
+    {
+        if (node.m_type != kn5::Node::Transform)
+            usedMaterialIDs.insert(node.m_materialID);
+
+        for (const auto& child : node.m_children)
+            getUsedMaterials(child, usedMaterialIDs);
+    }
+
+    void writeAc3d(const kn5& model, const std::string& file, const kn5::Node& node, bool convertToPNG, bool outputACC, bool useDiffuse)
+    {
+        std::set<int>   usedMaterialIDs;
+
+        getUsedMaterials(node, usedMaterialIDs);
+
+        std::ofstream fout(file);
+
+        if (fout)
+        {
+            fout << "AC3Db" << std::endl;
+
+            writeAc3dMaterials(model, fout, node, usedMaterialIDs);
+
+            fout << "OBJECT world" << std::endl;
+            fout << "kids 1" << std::endl;
+
+            writeAc3dObject(model, fout, node, usedMaterialIDs, convertToPNG, outputACC, useDiffuse);
+
+            fout.close();
+        }
+    }
+
+    void writeAc3d(const kn5& model, const std::string& file, bool convertToPNG, bool outputACC, bool useDiffuse)
+    {
+        writeAc3d(model, file, model.m_node, convertToPNG, outputACC, useDiffuse);
+    }
+
+    bool extract(kn5& model, const std::string& name, const kn5::Matrix& xform, const std::string& file)
+    {
+        kn5::Node* transformNode = model.findNode(kn5::Node::Transform, name);
+
+        if (transformNode == nullptr)
+            return false;
+
+        kn5::Node   node = *transformNode;
+
+        node.m_matrix.makeIdentity();
+
+        node.removeInactiveNodes();
+        node.transform(xform);
+
+        writeAc3d(model, file, node, true, file.find(".acc") != std::string::npos, true);
+
+        if (transformNode->m_parent)
+            transformNode->m_parent->removeChild(transformNode);
+
+        return true;
+    }
+
     void usage()
     {
         std::cout << "Usage: kn5toac -c category -i input_directory [-o output_directory] [-n kn5_filename] [-s skin_filename] [-d]" << std::endl;
@@ -850,7 +1226,7 @@ int main(int argc, char* argv[])
             }
         }
 
-        lod0model.writeTextures(outputPath.string(), true, true);
+        writeTextureFiles(lod0model, outputPath.string(), true, true);
 
         if (dumpModel)
         {
@@ -1077,11 +1453,11 @@ int main(int argc, char* argv[])
 
         outputFilePath.append(inputFileDirectoryName + (outputACC ? ".acc" : ".ac"));
 
-        model.writeAc3d(outputFilePath.string(), convertToPNG, outputACC, useDiffuse);
+        writeAc3d(model, outputFilePath.string(), convertToPNG, outputACC, useDiffuse);
     }
 
     if (writeTextures)
-        model.writeTextures(outputPath.string(), convertToPNG, deleteDDS);
+        writeTextureFiles(model, outputPath.string(), convertToPNG, deleteDDS);
 
     if (writeCmake)
     {
@@ -1280,10 +1656,10 @@ int main(int argc, char* argv[])
 
                     driverOutFilePath.append("driver.ac");
 
-                    driverModel.writeAc3d(driverOutFilePath.string(), true, false, true);
+                    writeAc3d(driverModel, driverOutFilePath.string(), true, false, true);
 
                     if (writeTextures)
-                        driverModel.writeTextures(outputPath.string(), convertToPNG, deleteDDS);
+                        writeTextureFiles(driverModel, outputPath.string(), convertToPNG, deleteDDS);
                 }
             }
         }
