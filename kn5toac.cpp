@@ -232,55 +232,60 @@ namespace
         //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Engine\">" << std::endl;
-        //	<attnum name="capacity" unit="l" val="3.6"/>
-        //	<attnum name="cylinders" val="6"/>
-        //	<attstr name="shape" in="v,l,h,w" val="h"/>
-        //	<attstr name="position" in="front,front-mid,mid,rear-mid,rear," val="rear"/>
-        std::vector<std::pair<float, float>> values;
-        std::string powerLutFileName = engine.getValue("HEADER", "POWER_CURVE");
-        if (!powerLutFileName.empty())
+        if (engine.hasSections())
         {
-            std::filesystem::path powerPath = dataDirectoryPath;
-            powerPath.append(powerLutFileName);
-            lut power(powerPath.string());
-            values = power.getValues();
-            fout << "\t\t<attnum name=\"revs maxi\" unit=\"rpm\" min=\"5000\" max=\"10000\" val=\"" << values[values.size() - 1].first << "\"/>" << std::endl;
-        }
-        else
-            std::cerr << "Couldn't find [HEADER] POEWR_CURVE: " << engine.getFileName() << std::endl;
-        fout << "\t\t<attnum name=\"revs limiter\" unit=\"rpm\" val=\"" << engine.getValue("ENGINE_DATA", "LIMITER") << "\"/>" << std::endl;
-        fout << "\t\t<attnum name=\"tickover\" unit=\"rpm\" val=\"" << engine.getValue("ENGINE_DATA", "MINIMUM") << "\"/>" << std::endl;
-        //	<attnum name="fuel cons factor" min="1.1" max="1.3" val="1.13"/>
-		//  <attnum name="brake linear coefficient" val="0.04"/>
-		//  <attnum name="brake coefficient" val="0.04"/>
-		fout << "\t\t<attnum name=\"inertia\" unit=\"kg.m2\" val=\"" << engine.getValue("ENGINE_DATA", "INERTIA") << "\"/>" << std::endl;
-        if (engine.hasSection("TURBO_0"))
-        {
-            fout << "\t\t<attstr name=\"turbo\" val=\"true\"/>" << std::endl;
-            fout << "\t\t<attnum name=\"turbo rpm\" unit=\"rpm\" val=\"" << engine.getValue("TURBO_0", "REFERENCE_RPM")<< "\"/>" << std::endl;
-            fout << "\t\t<attnum name=\"turbo lag\" val=\"" << engine.getValue("TURBO_0", "LAG_UP") << "\"/>" << std::endl;
-            //	<attnum name="turbo factor" val="1.0"/>
-        }
-        else
-            fout << "\t\t<attstr name=\"turbo\" val=\"false\"/>" << std::endl;
-
-        //  <attnum name="enable tcl" min="0" max="1" val="1" / >
-
-        fout << "\t\t<section name=\"data points\">" << std::endl;
-        size_t count = 0;
-        for (size_t i = 0; i < values.size(); i++)
-        {
-            // TODO this is torque at wheels
-            if (values[i].first >= 0)
+            //	<attnum name="capacity" unit="l" val="3.6"/>
+            //	<attnum name="cylinders" val="6"/>
+            //	<attstr name="shape" in="v,l,h,w" val="h"/>
+            //	<attstr name="position" in="front,front-mid,mid,rear-mid,rear," val="rear"/>
+            std::vector<std::pair<float, float>> values;
+            std::string powerLutFileName = engine.getValue("HEADER", "POWER_CURVE");
+            if (!powerLutFileName.empty())
             {
-                fout << "\t\t\t<section name=\"" << (count + 1) << "\">" << std::endl;
-                fout << "\t\t\t\t<attnum name=\"rpm\" unit=\"rpm\" val=\"" << values[i].first << "\"/>" << std::endl;
-                fout << "\t\t\t\t<attnum name=\"Tq\" unit=\"N.m\" val=\"" << values[i].second << "\"/>" << std::endl;
-                fout << "\t\t\t</section>" << std::endl;
-                count++;
+                std::filesystem::path powerPath = dataDirectoryPath;
+                powerPath.append(powerLutFileName);
+                lut power(powerPath.string());
+                values = power.getValues();
+                fout << "\t\t<attnum name=\"revs maxi\" unit=\"rpm\" min=\"5000\" max=\"10000\" val=\"" << values[values.size() - 1].first << "\"/>" << std::endl;
             }
+            else
+                std::cerr << "Couldn't find [HEADER] POEWR_CURVE: " << engine.getFileName() << std::endl;
+            fout << "\t\t<attnum name=\"revs limiter\" unit=\"rpm\" val=\"" << engine.getValue("ENGINE_DATA", "LIMITER") << "\"/>" << std::endl;
+            fout << "\t\t<attnum name=\"tickover\" unit=\"rpm\" val=\"" << engine.getValue("ENGINE_DATA", "MINIMUM") << "\"/>" << std::endl;
+            //	<attnum name="fuel cons factor" min="1.1" max="1.3" val="1.13"/>
+            //  <attnum name="brake linear coefficient" val="0.04"/>
+            //  <attnum name="brake coefficient" val="0.04"/>
+            fout << "\t\t<attnum name=\"inertia\" unit=\"kg.m2\" val=\"" << engine.getValue("ENGINE_DATA", "INERTIA") << "\"/>" << std::endl;
+            if (engine.hasSection("TURBO_0"))
+            {
+                fout << "\t\t<attstr name=\"turbo\" val=\"true\"/>" << std::endl;
+                fout << "\t\t<attnum name=\"turbo rpm\" unit=\"rpm\" val=\"" << engine.getValue("TURBO_0", "REFERENCE_RPM") << "\"/>" << std::endl;
+                fout << "\t\t<attnum name=\"turbo lag\" val=\"" << engine.getValue("TURBO_0", "LAG_UP") << "\"/>" << std::endl;
+                //	<attnum name="turbo factor" val="1.0"/>
+            }
+            else
+                fout << "\t\t<attstr name=\"turbo\" val=\"false\"/>" << std::endl;
+
+            //  <attnum name="enable tcl" min="0" max="1" val="1" / >
+
+            fout << "\t\t<section name=\"data points\">" << std::endl;
+            size_t count = 0;
+            for (size_t i = 0; i < values.size(); i++)
+            {
+                // TODO this is torque at wheels
+                if (values[i].first >= 0)
+                {
+                    fout << "\t\t\t<section name=\"" << (count + 1) << "\">" << std::endl;
+                    fout << "\t\t\t\t<attnum name=\"rpm\" unit=\"rpm\" val=\"" << values[i].first << "\"/>" << std::endl;
+                    fout << "\t\t\t\t<attnum name=\"Tq\" unit=\"N.m\" val=\"" << values[i].second << "\"/>" << std::endl;
+                    fout << "\t\t\t</section>" << std::endl;
+                    count++;
+                }
+            }
+            fout << "\t\t</section>" << std::endl;
         }
-        fout << "\t\t</section>" << std::endl;
+        else
+            std::cerr << "Couldn't find any sections: " << engine.getFileName() << std::endl;
         fout << "\t</section>" << std::endl;
 
         //---------------------------------------------------------------------
@@ -293,29 +298,32 @@ namespace
 
         fout << "\t<section name=\"Gearbox\">" << std::endl;
         //	<attnum name="shift time" unit="s" val="0.15"/>
-        fout << "\t\t<section name=\"gears\">" << std::endl;
-        fout << "\t\t\t<section name=\"r\">" << std::endl;
-        fout << "\t\t\t\t<attnum name=\"ratio\" val=\"" << drivetrain.getValue("GEARS", "GEAR_R") << "\"/>" << std::endl;
-        // fout << "\t\t\t\t<attnum name=\"inertia\" val=\"" << 0.0037 << "\"/>" << std::endl;
-        // fout << "\t\t\t\t<attnum name=\"efficiency\" val=\"" << 0.954 << "\"/>" << std::endl;
-        fout << "\t\t\t</section>" << std::endl;
-        try
+        if (drivetrain.hasSection("GEARS"))
         {
-            const size_t gears = drivetrain.getIntValue("GEARS", "COUNT");
-            for (size_t i = 0; i < gears; i++)
+            fout << "\t\t<section name=\"gears\">" << std::endl;
+            fout << "\t\t\t<section name=\"r\">" << std::endl;
+            fout << "\t\t\t\t<attnum name=\"ratio\" val=\"" << drivetrain.getValue("GEARS", "GEAR_R") << "\"/>" << std::endl;
+            // fout << "\t\t\t\t<attnum name=\"inertia\" val=\"" << 0.0037 << "\"/>" << std::endl;
+            // fout << "\t\t\t\t<attnum name=\"efficiency\" val=\"" << 0.954 << "\"/>" << std::endl;
+            fout << "\t\t\t</section>" << std::endl;
+            try
             {
-                fout << "\t\t\t<section name=\"" << (i + 1) << "\">" << std::endl;
-                fout << "\t\t\t\t<attnum name=\"ratio\" val=\"" << drivetrain.getValue("GEARS", "GEAR_" + std::to_string(i + 1)) << "\"/>" << std::endl;
-                // fout << "\t\t\t\t<attnum name=\"inertia\" val=\"" << 0.0037 << "\"/>" << std::endl;
-                // fout << "\t\t\t\t<attnum name=\"efficiency\" val=\"" << 0.954 << "\"/>" << std::endl;
-                fout << "\t\t\t</section>" << std::endl;
+                const size_t gears = drivetrain.getIntValue("GEARS", "COUNT");
+                for (size_t i = 0; i < gears; i++)
+                {
+                    fout << "\t\t\t<section name=\"" << (i + 1) << "\">" << std::endl;
+                    fout << "\t\t\t\t<attnum name=\"ratio\" val=\"" << drivetrain.getValue("GEARS", "GEAR_" + std::to_string(i + 1)) << "\"/>" << std::endl;
+                    // fout << "\t\t\t\t<attnum name=\"inertia\" val=\"" << 0.0037 << "\"/>" << std::endl;
+                    // fout << "\t\t\t\t<attnum name=\"efficiency\" val=\"" << 0.954 << "\"/>" << std::endl;
+                    fout << "\t\t\t</section>" << std::endl;
+                }
             }
+            catch (...)
+            {
+                std::cerr << "Couldn't find [GEARS] COUNT: " << drivetrain.getFileName() << std::endl;
+            }
+            fout << "\t\t</section>" << std::endl;
         }
-        catch (...)
-        {
-            std::cerr << "Couldn't find [GEARS] COUNT: " << drivetrain.getFileName() << std::endl;
-        }
-        fout << "\t\t</section>" << std::endl;
         fout << "\t</section>" << std::endl;
 
         //---------------------------------------------------------------------
@@ -498,13 +506,15 @@ namespace
         //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Front Anti-Roll Bar\">" << std::endl;
-        fout << "\t\t<attnum name=\"spring\" unit=\"N/m\" min=\"0\" max=\"50000\" val=\"" << suspensions.getValue("ARB", "FRONT") << "\"/>" << std::endl;
+        if (suspensions.hasSection("ARB"))
+            fout << "\t\t<attnum name=\"spring\" unit=\"N/m\" min=\"0\" max=\"50000\" val=\"" << suspensions.getValue("ARB", "FRONT") << "\"/>" << std::endl;
         fout << "\t</section>" << std::endl;
 
         //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Rear Anti-Roll Bar\">" << std::endl;
-        fout << "\t\t<attnum name=\"spring\" unit=\"N/m\" min=\"0\" max=\"50000\" val=\"" << suspensions.getValue("ARB", "REAR") << "\"/>" << std::endl;
+        if (suspensions.hasSection("ARB"))
+            fout << "\t\t<attnum name=\"spring\" unit=\"N/m\" min=\"0\" max=\"50000\" val=\"" << suspensions.getValue("ARB", "REAR") << "\"/>" << std::endl;
         fout << "\t</section>" << std::endl;
 
         //---------------------------------------------------------------------
