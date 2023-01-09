@@ -52,6 +52,8 @@ namespace
         if (!fout)
             throw std::runtime_error("Couldn't create: " + filename);
 
+        std::array<float, 3> graphicsCorrection = car.getFloatArray3Value("BASIC", "GRAPHICS_OFFSET");
+
         fout << "<?xml version=\"1.0\"?>" << std::endl;
         fout << "<!DOCTYPE params SYSTEM \"../../../../src/libs/tgf/params.dtd\">" << std::endl;
 
@@ -127,14 +129,35 @@ namespace
 
         if (steerNode)
         {
-            steer[0] = steerNode->m_matrix.m_data[3][2];
-            steer[1] = steerNode->m_matrix.m_data[3][0];
-            steer[2] = steerNode->m_matrix.m_data[3][1];
+            kn5::Matrix matrix = steerNode->getTransform();
+
+            steer[0] = matrix.m_data[3][2];
+            steer[1] = matrix.m_data[3][0];
+            steer[2] = matrix.m_data[3][1];
 
             fout << "\t\t\t<attnum name=\"xpos\" val=\"" << steer[0] << "\"/>" << std::endl;
             fout << "\t\t\t<attnum name=\"ypos\" val=\"" << steer[1] << "\"/>" << std::endl;
             fout << "\t\t\t<attnum name=\"zpos\" val=\"" << steer[2] << "\"/>" << std::endl;
         }
+        else
+        {
+            kn5::Vec3   steerHi = { 0, 0, 0 };
+            const kn5::Node* steerNodeHi = model.findNode(kn5::Node::Transform, "STEER_HR");
+
+            if (steerNodeHi)
+            {
+                kn5::Matrix matrix = steerNodeHi->getTransform();
+
+                steerHi[0] = matrix.m_data[3][2];
+                steerHi[1] = matrix.m_data[3][0];
+                steerHi[2] = matrix.m_data[3][1];
+
+                fout << "\t\t\t<attnum name=\"xpos\" val=\"" << steer[0] << "\"/>" << std::endl;
+                fout << "\t\t\t<attnum name=\"ypos\" val=\"" << steer[1] << "\"/>" << std::endl;
+                fout << "\t\t\t<attnum name=\"zpos\" val=\"" << steer[2] << "\"/>" << std::endl;
+            }
+        }
+
         //	<attnum name="angle" val="0"/>
         fout << "\t\t</section>" << std::endl;
         fout << "\t\t<section name=\"Driver\">" << std::endl;
@@ -368,7 +391,6 @@ namespace
         {
             float wheelbase = suspensions.getFloatValue("BASIC", "WHEELBASE");
             float cg = suspensions.getFloatValue("BASIC", "CG_LOCATION");
-            std::array<float, 3> graphicsCorrection = car.getFloatArray3Value("BASIC", "GRAPHICS_OFFSET");
             float xpos = ((wheelbase * (1 - cg)) - graphicsCorrection[2]);
 
             fout << "\t<section name=\"Front Axle\">" << std::endl;
@@ -680,7 +702,8 @@ namespace
 
                 if (!png.empty() && !std::filesystem::exists(png))
                 {
-                    filesToDelete.insert(texturePathString);
+                    if (deleteDDS)
+                        filesToDelete.insert(texturePathString);
 
                     quote(texturePathString);
 
@@ -1279,7 +1302,7 @@ int main(int argc, char* argv[])
             }
         }
 
-        writeTextureFiles(lod0model, outputPath.string(), true, true);
+        writeTextureFiles(lod0model, outputPath.string(), convertToPNG, deleteDDS);
 
         if (dumpModel)
         {

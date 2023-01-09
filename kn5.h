@@ -222,6 +222,7 @@ public:
         bool removeChild(Node* child);
         void removeEmptyNodes();
         void removeInactiveNodes();
+        Matrix getTransform() const;
     };
 
     void readTextures(std::istream& stream);

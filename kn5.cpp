@@ -500,6 +500,20 @@ void kn5::Node::transform(const Matrix& matrix)
     }
 }
 
+kn5::Matrix kn5::Node::getTransform() const
+{
+    kn5::Matrix matrix = m_matrix;
+    kn5::Node* parent = m_parent;
+
+    while (parent)
+    {
+        matrix = parent->m_matrix.multiply(matrix);
+        parent = parent->m_parent;
+    }
+
+    return matrix;
+}
+
 bool kn5::Node::removeChild(Node* child)
 {
     for (std::vector<Node>::iterator it = m_children.begin(); it != m_children.end(); ++it)
