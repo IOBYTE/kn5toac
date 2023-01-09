@@ -13,6 +13,11 @@ void acd::read(const std::string& fileName)
 	if (!stream)
 		throw std::runtime_error("Couldn't open file: " + fileName);
 
+	if (kn5::readInt32(stream) == -1111)
+		kn5::readInt32(stream);
+	else
+		stream.seekg(0, stream.beg);
+
 	while (stream.peek() != EOF)
 	{
 		Entry   entry;
