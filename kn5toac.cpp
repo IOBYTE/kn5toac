@@ -419,18 +419,22 @@ namespace
 
         //---------------------------------------------------------------------
 
+        float frontBrakeInertia = 0.125f;
+        float rearBrakeInertia = 0.125f;
+
         if (tires.hasSections())
         {
             float frontTrack = suspensions.getFloatValue("FRONT", "TRACK");
             float frontRimRadius = tires.getFloatValue("FRONT", "RIM_RADIUS") - 0.0254f;
             float frontTireAspectRatio = (tires.getFloatValue("FRONT", "RADIUS") - frontRimRadius) / tires.getFloatValue("FRONT", "WIDTH");
+            float frontWheelTireInertia = tires.getFloatValue("FRONT", "ANGULAR_INERTIA") - frontBrakeInertia;
             fout << "\t<section name=\"Front Right Wheel\">" << std::endl;
             fout << "\t\t<attnum name=\"ypos\" unit=\"m\" val=\"" << (-frontTrack / 2) << "\"/>" << std::endl;
             fout << "\t\t<attnum name=\"rim diameter\" unit=\"m\" val=\"" << (frontRimRadius * 2.0f) << "\"/>" << std::endl;
             fout << "\t\t<attnum name=\"tire width\" unit=\"m\" val=\"" << tires.getValue("FRONT", "WIDTH") << "\"/>" << std::endl;
             //  fout << "\t\t<attnum name=\"tire height\" unit=\"m\" val=\"" << (tires.getFloatValue("FRONT", "RADIUS") * 2.0f) << "\"/>" << std::endl;
             fout << "\t\t<attnum name=\"tire height-width ratio\" val=\"" << frontTireAspectRatio << "\"/>" << std::endl;
-            //  fout << "\t\t<attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >" << std::endl;
+            fout << "\t\t<attnum name=\"inertia\" unit=\"kg.m2\" val=\"" << frontWheelTireInertia << "\"/>" << std::endl;
             //  <attnum name="mass" unit="kg" val="24.5"/>
             //  fout << "\t\t<attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >" << std::endl;
             //  fout << "\t\t<attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >" << std::endl;
@@ -457,7 +461,7 @@ namespace
             fout << "\t\t<attnum name=\"tire width\" unit=\"m\" val=\"" << tires.getValue("FRONT", "WIDTH") << "\"/>" << std::endl;
             //  fout << "\t\t<attnum name=\"tire height\" unit=\"m\" val=\"" << (tires.getFloatValue("FRONT", "RADIUS") * 2.0f) << "\"/>" << std::endl;
             fout << "\t\t<attnum name=\"tire height-width ratio\" val=\"" << frontTireAspectRatio << "\"/>" << std::endl;
-            //  <attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >
+            fout << "\t\t<attnum name=\"inertia\" unit=\"kg.m2\" val=\"" << frontWheelTireInertia << "\"/>" << std::endl;
             //  <attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >
             //  <attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >
             //  <attnum name = "camber" min = "-5" max = "0" unit = "deg" val = "-5" / >
@@ -472,13 +476,14 @@ namespace
             float rearTrack = suspensions.getFloatValue("REAR", "TRACK");
             float rearRimRadius = tires.getFloatValue("REAR", "RIM_RADIUS") - 0.0254f;
             float rearTireAspectRatio = (tires.getFloatValue("REAR", "RADIUS") - rearRimRadius) / tires.getFloatValue("REAR", "WIDTH");
+            float rearWheelTireInertia = tires.getFloatValue("REAR", "ANGULAR_INERTIA") - rearBrakeInertia;
             fout << "\t<section name=\"Rear Right Wheel\">" << std::endl;
             fout << "\t\t<attnum name=\"ypos\" unit=\"m\" val=\"" << -(rearTrack / 2) << "\"/>" << std::endl;
             fout << "\t\t<attnum name=\"rim diameter\" unit=\"m\" val=\"" << (rearRimRadius * 2.0f) << "\"/>" << std::endl;
             fout << "\t\t<attnum name=\"tire width\" unit=\"m\" val=\"" << tires.getValue("REAR", "WIDTH") << "\"/>" << std::endl;
             //  fout << "\t\t<attnum name=\"tire height\" unit=\"m\" val=\"" << (tires.getFloatValue("REAR", "RADIUS") * 2.0f) << "\"/>" << std::endl;
             fout << "\t\t<attnum name=\"tire height-width ratio\" val=\"" << rearTireAspectRatio << "\"/>" << std::endl;
-            //  <attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >
+            fout << "\t\t<attnum name=\"inertia\" unit=\"kg.m2\" val=\"" << rearWheelTireInertia << "\"/>" << std::endl;
             //  <attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >
             //  <attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >
             //  <attnum name = "camber" min = "-5" max = "0" unit = "deg" val = "-5" / >
@@ -496,7 +501,7 @@ namespace
             fout << "\t\t<attnum name=\"tire width\" unit=\"m\" val=\"" << tires.getValue("REAR", "WIDTH") << "\"/>" << std::endl;
             //  fout << "\t\t<attnum name=\"tire height\" unit=\"m\" val=\"" << (tires.getFloatValue("REAR", "RADIUS") * 2.0f) << "\"/>" << std::endl;
             fout << "\t\t<attnum name=\"tire height-width ratio\" val=\"" << rearTireAspectRatio << "\"/>" << std::endl;
-            //  <attnum name = "inertia" unit = "kg.m2" val = "1.2200" / >
+            fout << "\t\t<attnum name=\"inertia\" unit=\"kg.m2\" val=\"" << rearWheelTireInertia << "\"/>" << std::endl;
             //  <attnum name = "ride height" unit = "mm" min = "100" max = "300" val = "100" / >
             //  <attnum name = "toe" unit = "deg" min = "-5" max = "5" val = "0" / >
             //  <attnum name = "camber" min = "-5" max = "0" unit = "deg" val = "-5" / >
@@ -582,7 +587,7 @@ namespace
             fout << "\t\t<attnum name=\"disk diameter\" unit=\"m\" val=\"" << (disk->m_boundingSphere.m_radius * 2.0f) << "\"/>" << std::endl;
         //	<attnum name="piston area" unit="cm2" val="50"/>
         //	<attnum name="mu" val="0.45"/>
-        //	<attnum name="inertia" unit="kg.m2" val="0.1241"/>
+        fout << "\t\t<attnum name=\"inertia\" unit=\"kg.m2\" val=\"" << frontBrakeInertia << "\"/>" << std::endl;
         //  <attnum name="enable abs" min="0" max="1" val="1"/>
         fout << "\t</section>" << std::endl;
 
@@ -595,7 +600,7 @@ namespace
             fout << "\t\t<attnum name=\"disk diameter\" unit=\"m\" val=\"" << (disk->m_boundingSphere.m_radius * 2.0f) << "\"/>" << std::endl;
         //	<attnum name="piston area" unit="cm2" val="50"/>
         //	<attnum name="mu" val="0.45"/>
-        //	<attnum name="inertia" unit="kg.m2" val="0.1241"/>
+        fout << "\t\t<attnum name=\"inertia\" unit=\"kg.m2\" val=\"" << frontBrakeInertia << "\"/>" << std::endl;
         //  <attnum name="enable abs" min="0" max="1" val="1"/>
         fout << "\t</section>" << std::endl;
 
@@ -608,7 +613,7 @@ namespace
             fout << "\t\t<attnum name=\"disk diameter\" unit=\"m\" val=\"" << (disk->m_boundingSphere.m_radius * 2.0f) << "\"/>" << std::endl;
         //	<attnum name="piston area" unit="cm2" val="50"/>
         //	<attnum name="mu" val="0.45"/>
-        //	<attnum name="inertia" unit="kg.m2" val="0.1241"/>
+        fout << "\t\t<attnum name=\"inertia\" unit=\"kg.m2\" val=\"" << rearBrakeInertia << "\"/>" << std::endl;
         //  <attnum name="enable abs" min="0" max="1" val="1"/>
         fout << "\t</section>" << std::endl;
 
@@ -621,7 +626,7 @@ namespace
             fout << "\t\t<attnum name=\"disk diameter\" unit=\"m\" val=\"" << (disk->m_boundingSphere.m_radius * 2.0f) << "\"/>" << std::endl;
         //	<attnum name="piston area" unit="cm2" val="50"/>
         //	<attnum name="mu" val="0.45"/>
-        //	<attnum name="inertia" unit="kg.m2" val="0.1241"/>
+        fout << "\t\t<attnum name=\"inertia\" unit=\"kg.m2\" val=\"" << rearBrakeInertia << "\"/>" << std::endl;
         //  <attnum name="enable abs" min="0" max="1" val="1"/>
         fout << "\t</section>" << std::endl;
 
