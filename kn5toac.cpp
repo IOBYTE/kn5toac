@@ -1088,6 +1088,7 @@ int main(int argc, char* argv[])
     bool        writeDriver = false;
     bool        dumpInputDriver = false;
     bool        dumpDriverKnh = false;
+    bool        cockpitLR = true;
     std::string category;
     std::string inputDirectory;
     std::string outputDirectory;
@@ -1517,6 +1518,22 @@ int main(int argc, char* argv[])
                                 texture.m_name = txDiffuse->m_textureName;
                         }
                     }
+                }
+            }
+        }
+
+        if (cockpitLR)
+        {
+            kn5::Node* cockpitHRNode = model.findNode(kn5::Node::Transform, "COCKPIT_HR");
+
+            if (cockpitHRNode && cockpitHRNode->m_active)
+            {
+                kn5::Node* cockpitLRNode = model.findNode(kn5::Node::Transform, "COCKPIT_LR");
+
+                if (cockpitHRNode)
+                {
+                    cockpitHRNode->m_active = false;
+                    cockpitLRNode->m_active = true;
                 }
             }
         }
