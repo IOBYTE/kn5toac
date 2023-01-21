@@ -863,7 +863,7 @@ namespace
                 const kn5::ShaderProperty* useDetail = model.m_materials[node.m_materialID].findShaderProperty("useDetail");
                 const kn5::TextureMapping* txDetail = model.m_materials[node.m_materialID].findTextureMapping("txDetail");
 
-                texture = ((useDetail && useDetail->m_value != 0) && txDetail) ? txDetail->m_textureName : txDiffuse->m_textureName;
+                texture = ((useDetail && useDetail->m_value != 0.0f) && txDetail) ? txDetail->m_textureName : txDiffuse->m_textureName;
             }
 
             if (convertToPNG && (texture.find(".png") == std::string::npos && texture.find(".PNG") == std::string::npos))
@@ -935,7 +935,7 @@ namespace
 
                 struct Ref
                 {
-                    int         m_index = 0;
+                    int          m_index = 0;
                     kn5::Vec3    m_vertex = { 0, 0, 0 };
                     kn5::Vec2    m_uv = { 0, 0 };
                 };
