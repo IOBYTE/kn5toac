@@ -863,7 +863,7 @@ namespace
                 const kn5::ShaderProperty* useDetail = model.m_materials[node.m_materialID].findShaderProperty("useDetail");
                 const kn5::TextureMapping* txDetail = model.m_materials[node.m_materialID].findTextureMapping("txDetail");
 
-                texture = ((useDetail && useDetail != 0) && txDetail) ? txDetail->m_textureName : txDiffuse->m_textureName;
+                texture = ((useDetail && useDetail->m_value != 0) && txDetail) ? txDetail->m_textureName : txDiffuse->m_textureName;
             }
 
             if (convertToPNG && (texture.find(".png") == std::string::npos && texture.find(".PNG") == std::string::npos))
