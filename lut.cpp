@@ -33,7 +33,7 @@ void lut::dump(std::ostream& stream) const
 {
     for (const auto& entry : m_entries)
     {
-        std::cout << entry.first << " | " << entry.second << std::endl;
+        stream << entry.first << " | " << entry.second << std::endl;
     }
 }
 

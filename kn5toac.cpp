@@ -152,9 +152,9 @@ namespace
                 steerHi[1] = matrix.m_data[3][0];
                 steerHi[2] = matrix.m_data[3][1];
 
-                fout << "\t\t\t<attnum name=\"xpos\" val=\"" << steer[0] << "\"/>" << std::endl;
-                fout << "\t\t\t<attnum name=\"ypos\" val=\"" << steer[1] << "\"/>" << std::endl;
-                fout << "\t\t\t<attnum name=\"zpos\" val=\"" << steer[2] << "\"/>" << std::endl;
+                fout << "\t\t\t<attnum name=\"xpos\" val=\"" << steerHi[0] << "\"/>" << std::endl;
+                fout << "\t\t\t<attnum name=\"ypos\" val=\"" << steerHi[1] << "\"/>" << std::endl;
+                fout << "\t\t\t<attnum name=\"zpos\" val=\"" << steerHi[2] << "\"/>" << std::endl;
             }
         }
 

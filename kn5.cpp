@@ -477,11 +477,6 @@ void kn5::Node::read(std::istream& stream, Node* parent)
         child.read(stream, this);
 }
 
-void kn5::Node::readTranslation(std::istream& stream)
-{
-    m_matrix.read(stream);
-}
-
 void kn5::Node::transform(const Matrix& matrix)
 {
     if (m_type != Transform)

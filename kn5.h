@@ -217,7 +217,6 @@ public:
 
         void read(std::istream& stream, Node* parent);
         void dump(std::ostream& stream, const std::string& indent = "") const;
-        void readTranslation(std::istream& stream);
         void transform(const Matrix& matrix);
         bool removeChild(Node* child);
         void removeEmptyNodes();
