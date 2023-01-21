@@ -41,7 +41,7 @@ namespace
         //ini flames;
         //if (std::filesystem::exists(std::filesystem::path(dataDirectoryPath).append("flames.ini").string()))
         //    flames.read(std::filesystem::path(dataDirectoryPath).append("flames.ini").string());
-        //ini setup(std::filesystem::path(dataDirectoryPath).append("setup.ini").string());
+        ini setup(std::filesystem::path(dataDirectoryPath).append("setup.ini").string());
         ini suspensions(std::filesystem::path(dataDirectoryPath).append("suspensions.ini").string());
         ini tires(std::filesystem::path(dataDirectoryPath).append("tyres.ini").string());
 
@@ -538,14 +538,24 @@ namespace
 
         fout << "\t<section name=\"Front Anti-Roll Bar\">" << std::endl;
         if (suspensions.hasSection("ARB"))
-            fout << "\t\t<attnum name=\"spring\" unit=\"N/m\" min=\"0\" max=\"50000\" val=\"" << suspensions.getValue("ARB", "FRONT") << "\"/>" << std::endl;
+        {
+            fout << "\t\t<attnum name=\"spring\" unit=\"N/m\" min=\""
+                 << setup.getFloatValue("ARB_FRONT", "MIN", 0.0f) << "\" max=\""
+                 << setup.getFloatValue("ARB_FRONT", "MAX", 200000.0f)  << "\" val=\""
+                 << suspensions.getValue("ARB", "FRONT") << "\"/>" << std::endl;
+        }
         fout << "\t</section>" << std::endl;
 
         //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Rear Anti-Roll Bar\">" << std::endl;
         if (suspensions.hasSection("ARB"))
-            fout << "\t\t<attnum name=\"spring\" unit=\"N/m\" min=\"0\" max=\"50000\" val=\"" << suspensions.getValue("ARB", "REAR") << "\"/>" << std::endl;
+        {
+            fout << "\t\t<attnum name=\"spring\" unit=\"N/m\" min=\""
+                 << setup.getFloatValue("ARB_REAR", "MIN", 0.0f) << "\" max=\""
+                 << setup.getFloatValue("ARB_REAR", "MIN", 200000.0f) << "\" val=\""
+                 << suspensions.getValue("ARB", "REAR") << "\"/>" << std::endl;
+        }
         fout << "\t</section>" << std::endl;
 
         //---------------------------------------------------------------------
