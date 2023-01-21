@@ -649,6 +649,9 @@ void kn5::dump(std::ostream& stream) const
 {
     stream << "version: " << m_version << std::endl;
 
+    if (m_version > 5)
+        stream << "unknown: " << m_unknown << std::endl;
+
     stream << "textures: " << m_textures.size() << std::endl;
     for (size_t i = 0; i < m_textures.size(); i++)
     {
