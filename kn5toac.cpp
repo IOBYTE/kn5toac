@@ -1099,6 +1099,7 @@ int main(int argc, char* argv[])
     bool        dumpInputDriver = false;
     bool        dumpDriverKnh = false;
     bool        cockpitLR = true;
+    bool        dumpModelHierarchy = true;
     std::string category;
     std::string inputDirectory;
     std::string outputDirectory;
@@ -1328,6 +1329,20 @@ int main(int argc, char* argv[])
 
             of.close();
         }
+
+        if (dumpModelHierarchy)
+        {
+            std::filesystem::path dumpFilePath = outputPath;
+
+            dumpFilePath.append(lod0FileName + ".hierarchy.dump");
+
+            std::ofstream of(dumpFilePath.string());
+
+            if (of)
+                lod0model.dumpHierarchy(of);
+
+            of.close();
+        }
     }
 
     std::filesystem::path   inputFilePath(inputPath);
@@ -1361,6 +1376,20 @@ int main(int argc, char* argv[])
 
         if (of)
             model.dump(of);
+    }
+
+    if (dumpModelHierarchy)
+    {
+        std::filesystem::path dumpFilePath = outputPath;
+
+        dumpFilePath.append(lod0FileName + ".hierarchy.dump");
+
+        std::ofstream of(dumpFilePath.string());
+
+        if (of)
+            model.dumpHierarchy(of);
+
+        of.close();
     }
 
     if (writeCarConfig)

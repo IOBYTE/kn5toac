@@ -217,6 +217,7 @@ public:
 
         void read(std::istream& stream, Node* parent);
         void dump(std::ostream& stream, const std::string& indent = "") const;
+        void dumpHierarchy(std::ostream& stream, const std::string& indent = "") const;
         void transform(const Matrix& matrix);
         bool removeChild(Node* child);
         void removeEmptyNodes();
@@ -240,6 +241,7 @@ public:
 
     void read(const std::string& name);
     void dump(std::ostream& stream) const;
+    void dumpHierarchy(std::ostream& stream) const;
     void transform(const Matrix& matrix);
     void transform(Node &node, const Matrix& matrix);
     void removeEmptyNodes();

@@ -603,6 +603,39 @@ void kn5::Node::dump(std::ostream& stream, const std::string& indent) const
     }
 }
 
+void kn5::Node::dumpHierarchy(std::ostream& stream, const std::string& indent) const
+{
+    stream << indent << m_name;
+
+    if (m_type == Node::Transform)
+    {
+        if (m_matrix.isIdentity())
+            stream << "  Null";
+        else if (m_matrix.isTranslation() && m_matrix.isRotation())
+            stream << "  Translation Rotation";
+        else if (m_matrix.isTranslation())
+            stream << "  Translation";
+        else if (m_matrix.isRotation())
+            stream << "  Rotation";
+    }
+    else if (m_type == Node::Mesh)
+        stream << "  Mesh";
+    else
+        stream << "  SkinnedMesh";
+
+    stream << (m_active ? "  Active" : "  NotActive");
+
+    if (m_type == Node::Transform)
+        stream << "  " << m_children.size() << " children";
+
+    stream << std::endl;
+
+    for (size_t i = 0; i < m_children.size(); i++)
+    {
+        m_children[i].dumpHierarchy(stream, indent + "  ");
+    }
+}
+
 void kn5::readTextures(std::istream& stream)
 {
     m_textures.resize(readInt32(stream));
@@ -669,6 +702,12 @@ void kn5::dump(std::ostream& stream) const
     stream << "node:" << std::endl;
     m_node.dump(stream, "  ");
 }
+
+void kn5::dumpHierarchy(std::ostream& stream) const
+{
+    m_node.dumpHierarchy(stream);
+}
+
 
 void kn5::transform(const Matrix& matrix)
 {
