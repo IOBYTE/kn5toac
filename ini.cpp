@@ -92,6 +92,21 @@ bool ini::dump(const std::string& fileName) const
     return false;
 }
 
+bool ini::hasValue(const std::string& section, const std::string& key) const
+{
+    auto it = m_sections.find(section);
+
+    if (it != m_sections.end())
+    {
+        auto it2 = it->second.find(key);
+
+        if (it2 != it->second.end())
+            return true;
+    }
+
+    return false;
+}
+
 std::string ini::getValue(const std::string& section, const std::string& key) const
 {
     std::string value;
@@ -117,6 +132,21 @@ int ini::getIntValue(const std::string& section, const std::string& key) const
 float ini::getFloatValue(const std::string& section, const std::string& key) const
 {
     return std::stof(getValue(section, key));
+}
+
+float ini::getFloatValue(const std::string& section, const std::string& key, const float value) const
+{
+    auto it = m_sections.find(section);
+
+    if (it != m_sections.end())
+    {
+        auto it2 = it->second.find(key);
+
+        if (it2 != it->second.end())
+            return std::stof(it2->second);
+    }
+
+    return value;
 }
 
 std::array<float, 3> ini::getFloatArray3Value(const std::string& section, const std::string& key) const
