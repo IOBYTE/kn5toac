@@ -2,8 +2,11 @@
 #include "trim.h"
 
 #include <iostream>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
+#include <string>
 
 void ini::read(const std::string& fileName)
 {
@@ -124,42 +127,88 @@ std::string ini::getValue(const std::string& section, const std::string& key) co
     return value;
 }
 
+// std::stoi/std::stof throw std::invalid_argument / std::out_of_range, which
+// are logic_errors, not runtime_errors. Convert them to a runtime_error that
+// says which file, section and key was missing or bad.
+std::runtime_error ini::valueError(const std::string& section, const std::string& key, const std::string& value) const
+{
+    const std::string where = (m_fileName.empty() ? std::string("ini") : m_fileName) + ": [" + section + "] " + key;
+
+    if (!hasValue(section, key))
+        return std::runtime_error(where + " is missing");
+
+    return std::runtime_error(where + " has invalid value '" + value + "'");
+}
+
 int ini::getIntValue(const std::string& section, const std::string& key) const
 {
-    return std::stoi(getValue(section, key));
+    const std::string value = getValue(section, key);
+
+    try
+    {
+        return std::stoi(value);
+    }
+    catch (const std::logic_error&)
+    {
+        throw valueError(section, key, value);
+    }
 }
 
 float ini::getFloatValue(const std::string& section, const std::string& key) const
 {
-    return std::stof(getValue(section, key));
+    const std::string value = getValue(section, key);
+
+    try
+    {
+        return std::stof(value);
+    }
+    catch (const std::logic_error&)
+    {
+        throw valueError(section, key, value);
+    }
 }
 
 float ini::getFloatValue(const std::string& section, const std::string& key, const float value) const
 {
-    auto it = m_sections.find(section);
+    if (!hasValue(section, key))
+        return value;
 
-    if (it != m_sections.end())
-    {
-        auto it2 = it->second.find(key);
-
-        if (it2 != it->second.end())
-            return std::stof(it2->second);
-    }
-
-    return value;
+    return getFloatValue(section, key);
 }
 
 std::array<float, 3> ini::getFloatArray3Value(const std::string& section, const std::string& key) const
 {
     std::array<float, 3>    vec3{ 0, 0, 0 };
-    std::istringstream ss(getValue(section, key));
+    const std::string value = getValue(section, key);
+    std::istringstream ss(value);
     std::string number;
     size_t index = 0;
 
-    while (index < 3 && std::getline(ss, number, ','))
-        vec3[index++] = std::stof(number);
+    try
+    {
+        while (index < 3 && std::getline(ss, number, ','))
+            vec3[index++] = std::stof(number);
+    }
+    catch (const std::logic_error&)
+    {
+        throw valueError(section, key, value);
+    }
 
     return vec3;
+}
+
+bool ini::readIfExists(const std::string& fileName)
+{
+    m_fileName = fileName;
+
+    std::error_code ec;
+
+    if (!std::filesystem::is_regular_file(fileName, ec))
+        return false;
+
+    read(fileName);
+
+    return true;
 }
 
 bool ini::hasSection(const std::string& section) const

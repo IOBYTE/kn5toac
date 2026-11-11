@@ -28,7 +28,7 @@ build using [CMake](https://cmake.org) to generate the Visual Studio project:
 ```
 mkdir build
 cd build
-cmake CMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 ```
 Build with CMake and GNU Make
 -----------------------------
@@ -39,7 +39,7 @@ build using [CMake](https://cmake.org) to generate the Makefile for
 ```
 mkdir build
 cd build
-cmake CMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 ```
 
 Then build the executable named ```kn5toac``` using GNU Make:
@@ -59,3 +59,8 @@ Examples
 kn5toac -c 92MP1 -i "C:/Program Files (x86)/Steam/steamapps/common/assettocorsa/sdk/dev/content/cars/formula_k" -o "C:/Users/Bob/speed-dreams-code/data/cars/models"
 ```
 A directory called formula_k will be created in the output directory specified by -o and all the generated files will be placed there.
+
+Use `-a` to set how bright the car is on the side away from the sun (material ambient, 0 to 1, default 0.6). Speed Dreams' own car bodies use 0.2, which looks very dark in shadow unless the car shader is enabled in the graphics options:
+```
+kn5toac -c 92MP1 -a 0.8 -i "C:/Program Files (x86)/Steam/steamapps/common/assettocorsa/sdk/dev/content/cars/formula_k" -o "C:/Users/Bob/speed-dreams-code/data/cars/models"
+```

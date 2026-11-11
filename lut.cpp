@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <stdexcept>
 
 void lut::read(const std::string& fileName)
 {

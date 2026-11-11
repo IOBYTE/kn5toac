@@ -1,8 +1,10 @@
 #ifndef _KN5_H_
 #define _KN5_H_
 
+#include <cstdint>
 #include <iostream>
 #include <string>
+#include <utility>
 #include <vector>
 #include <array>
 #include <set>
@@ -65,6 +67,26 @@ public:
     static bool readBool(std::istream& stream);
     static std::string readString(std::istream& stream, size_t length);
     static std::string readString(std::istream& stream);
+
+    // Reads an int32 element count and checks it is non-negative and that
+    // count * minElementSize bytes could still be left in the stream, so a
+    // corrupt count throws instead of driving a huge resize().
+    static size_t readCount(std::istream& stream, size_t minElementSize);
+    // Bytes left between the current position and the end of the stream
+    // (SIZE_MAX if the stream can't tell).
+    static size_t bytesRemaining(std::istream& stream);
+
+    // Deepest node nesting accepted, to stop a corrupt file recursing until the
+    // stack overflows.
+    static constexpr int MaxNodeDepth = 256;
+
+    // True if name is a single plain file name that is safe to append to an
+    // output directory: not empty, not "." or "..", and no path separators,
+    // drive letters (':') or control characters. Names stored inside car files
+    // (textures, data.acd entries, lods.ini) are checked with this before
+    // anything is written, so a crafted file can't write outside the folder.
+    static bool isPlainFileName(const std::string& name);
+
     static Vec2 readVec2(std::istream& stream);
     static Vec3 readVec3(std::istream& stream);
     static Vec4 readVec4(std::istream& stream);
@@ -215,7 +237,46 @@ public:
         std::vector<Node>           m_children;
         Node                        * m_parent = nullptr;
 
-        void read(std::istream& stream, Node* parent);
+        // Children are stored by value in a std::vector, so they move whenever the
+        // vector reallocates or a sibling is erased, and a copied node gets new
+        // children. These operations re-point each direct child's m_parent at its
+        // new owner so m_parent never dangles. (Each child's own copy/move fixes
+        // its children in turn.)
+        //
+        // A copy-constructed node is detached (m_parent = nullptr). Assignment
+        // keeps the target's own m_parent, since the target stays where it is.
+        Node() = default;
+        Node(const Node& other)
+        {
+            assignFields(other);
+        }
+        Node(Node&& other) noexcept
+            : m_parent(other.m_parent)
+        {
+            assignFields(std::move(other));
+        }
+        Node& operator=(const Node& other)
+        {
+            if (this != &other)
+            {
+                Node copy(other);   // copy first: other may live inside this subtree
+                assignFields(std::move(copy));
+            }
+            return *this;
+        }
+        Node& operator=(Node&& other) noexcept
+        {
+            if (this != &other)
+                assignFields(std::move(other));
+            return *this;
+        }
+        ~Node() = default;
+
+        void read(std::istream& stream, Node* parent, int depth = 0);
+        // Throws if a mesh's material ID, index count or vertex indices are
+        // out of range. Checked once after loading so later code can index
+        // m_materials and m_vertices without bounds checks.
+        void validate(size_t materialCount) const;
         void dump(std::ostream& stream, const std::string& indent = "") const;
         void dumpHierarchy(std::ostream& stream, const std::string& indent = "") const;
         void transform(const Matrix& matrix);
@@ -223,6 +284,34 @@ public:
         void removeEmptyNodes();
         void removeInactiveNodes();
         Matrix getTransform() const;
+
+    private:
+        // Copies or moves every field except m_parent, then relinks the children.
+        // Keep this in sync when adding fields to Node.
+        template <typename N>
+        void assignFields(N&& other)
+        {
+            m_type = other.m_type;
+            m_name = std::forward<N>(other).m_name;
+            m_active = other.m_active;
+            m_matrix = other.m_matrix;
+            m_castShadows = other.m_castShadows;
+            m_visible = other.m_visible;
+            m_transparent = other.m_transparent;
+            m_bones = std::forward<N>(other).m_bones;
+            m_vertices = std::forward<N>(other).m_vertices;
+            m_indices = std::forward<N>(other).m_indices;
+            m_materialID = other.m_materialID;
+            m_layer = other.m_layer;
+            m_lodIn = other.m_lodIn;
+            m_lodOut = other.m_lodOut;
+            m_boundingSphere = other.m_boundingSphere;
+            m_renderable = other.m_renderable;
+            m_children = std::forward<N>(other).m_children;
+
+            for (auto& child : m_children)
+                child.m_parent = this;
+        }
     };
 
     void readTextures(std::istream& stream);

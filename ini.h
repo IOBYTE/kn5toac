@@ -4,12 +4,16 @@
 #include <string>
 #include <map>
 #include <array>
+#include <iosfwd>
+#include <stdexcept>
 
 class ini
 {
 private:
     std::string                                               m_fileName;
     std::map<std::string, std::map<std::string, std::string>> m_sections;
+
+    std::runtime_error valueError(const std::string& section, const std::string& key, const std::string& value) const;
 
 public:
     ini() = default;
@@ -19,6 +23,11 @@ public:
     }
 
     void read(const std::string& fileName);
+    // Reads fileName if it exists. Returns false (leaving the ini empty but
+    // remembering the name for messages) if it doesn't.
+    bool readIfExists(const std::string& fileName);
+    // The get*Value functions throw std::runtime_error naming the file, section
+    // and key when a value is missing or can't be parsed.
     void dump(std::ostream& stream) const;
     bool dump(const std::string& fileName) const;
     std::string getValue(const std::string& section, const std::string& key) const;

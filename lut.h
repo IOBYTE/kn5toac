@@ -1,9 +1,10 @@
-#ifndef _LUI_H_
+#ifndef _LUT_H_
 #define _LUT_H_
 
 #include <string>
 #include <vector>
 #include <utility>
+#include <iosfwd>
 
 class lut
 {

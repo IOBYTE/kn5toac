@@ -15,7 +15,7 @@ class knh
         kn5::Matrix         m_matrix;
         std::vector<Entry>  m_children;
 
-        void read(std::istream& stream);
+        void read(std::istream& stream, int depth = 0);
         void dump(std::ostream& stream, const std::string& indent = "") const;
     };
 

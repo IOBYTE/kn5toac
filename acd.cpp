@@ -3,6 +3,9 @@
 
 #include <iostream>
 #include <fstream>
+#include <cstdint>
+#include <cstdio>
+#include <stdexcept>
 
 void acd::read(const std::string& fileName)
 {
@@ -13,29 +16,44 @@ void acd::read(const std::string& fileName)
 	if (!stream)
 		throw std::runtime_error("Couldn't open file: " + fileName);
 
-	if (kn5::readInt32(stream) == -1111)
-		kn5::readInt32(stream);
-	else
-		stream.seekg(0, stream.beg);
+	// a short read throws instead of leaving garbage in the values
+	// (peek() at the end only sets eofbit, so the loop below still ends normally)
+	stream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
-	while (stream.peek() != EOF)
+	try
 	{
-		Entry   entry;
+		if (kn5::readInt32(stream) == -1111)
+			kn5::readInt32(stream);
+		else
+			stream.seekg(0, stream.beg);
 
-		entry.m_name = kn5::readString(stream);
-
-		entry.m_rawData.resize(kn5::readInt32(stream));
-		stream.read(reinterpret_cast<char*>(entry.m_rawData.data()), entry.m_rawData.size() * 4);
-
-		entry.m_data.reserve(entry.m_rawData.size());
-		for (size_t i = 0; i < entry.m_rawData.size(); i++)
+		while (stream.peek() != EOF)
 		{
-			char data = static_cast<char>(entry.m_rawData[i]) - m_key[i % m_key.size()];
-			if (data != '\r')
-				entry.m_data.push_back(data);
-		}
+			Entry   entry;
 
-		m_entries.emplace_back(entry);
+			entry.m_name = kn5::readString(stream);
+
+			entry.m_rawData.resize(kn5::readCount(stream, sizeof(int32_t)));
+			stream.read(reinterpret_cast<char*>(entry.m_rawData.data()), static_cast<std::streamsize>(entry.m_rawData.size() * sizeof(int32_t)));
+
+			entry.m_data.reserve(entry.m_rawData.size());
+			for (size_t i = 0; i < entry.m_rawData.size(); i++)
+			{
+				char data = static_cast<char>(entry.m_rawData[i]) - m_key[i % m_key.size()];
+				if (data != '\r')
+					entry.m_data.push_back(data);
+			}
+
+			m_entries.emplace_back(entry);
+		}
+	}
+	catch (const std::ios_base::failure&)
+	{
+		throw std::runtime_error("Truncated or corrupt file: " + fileName);
+	}
+	catch (const std::runtime_error& e)
+	{
+		throw std::runtime_error(fileName + ": " + e.what());
 	}
 }
 
@@ -80,6 +98,13 @@ void acd::writeEntries(const std::string& directory) const
 
 	for (const auto& entry : m_entries)
 	{
+		// entry names come from the file: never let one escape the directory
+		if (!kn5::isPlainFileName(entry.m_name))
+		{
+			std::cerr << "Warning: skipping data.acd entry with unsafe name: " << entry.m_name << std::endl;
+			continue;
+		}
+
 		std::filesystem::path	iniFilePath = dataDirectory;
 
 		iniFilePath.append(entry.m_name);
@@ -109,7 +134,7 @@ void acd::calculateKey(const std::string& directory)
 
 	// another strange sum
 	int32_t factor1 = 0;
-	for (size_t i = 0; i < directory.size() - 1; i += 2)
+	for (size_t i = 0; i + 1 < directory.size(); i += 2)
 	{
 		auto tmp = directory[i] * factor1;
 		factor1 = tmp - directory[i + 1];
@@ -117,7 +142,7 @@ void acd::calculateKey(const std::string& directory)
 
 	// another strange sum
 	int32_t factor2 = 0;
-	for (size_t i = 1; i < directory.size() - 3; i += 3)
+	for (size_t i = 1; i + 3 < directory.size(); i += 3)
 	{
 		auto tmp0 = directory[i] * factor2;
 		auto tmp1 = tmp0 / (directory[i + 1] + 27);
@@ -133,7 +158,7 @@ void acd::calculateKey(const std::string& directory)
 
 	// of course, another strange sum
 	int32_t factor4 = 66;
-	for (size_t i = 1; i < directory.size() - 4; i += 4)
+	for (size_t i = 1; i + 4 < directory.size(); i += 4)
 	{
 		auto tmp = (directory[i] + 15) * factor4;
 		factor4 = (directory[i - 1] + 15) * tmp + 22;
@@ -141,21 +166,21 @@ void acd::calculateKey(const std::string& directory)
 
 	// yup, you guessed it
 	uint8_t factor5 = 101;
-	for (size_t i = 0; i < directory.size() - 2; i += 2)
+	for (size_t i = 0; i + 2 < directory.size(); i += 2)
 	{
 		factor5 -= directory[i];
 	}
 
 	// not even a purpose in commenting these anymore
 	int32_t factor6 = 171;
-	for (size_t i = 0; i < directory.size() - 2; i += 2)
+	for (size_t i = 0; i + 2 < directory.size(); i += 2)
 	{
 		factor6 %= directory[i];
 	}
 
 	// last one, finally
 	int32_t factor7 = 171;
-	for (size_t i = 0; i < directory.size() - 1;)
+	for (size_t i = 0; i + 1 < directory.size();)
 	{
 		auto tmp = factor7 / directory[i];
 		factor7 = directory[++i] + tmp;

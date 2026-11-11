@@ -1,18 +1,20 @@
 #ifndef _ACD_H_
 #define _ACD_H_
 
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <list>
 #include <filesystem>
+#include <iosfwd>
 
 class acd
 {
     struct Entry
     {
-        std::string         m_name;
-        std::vector<int>    m_rawData;
-        std::string         m_data;
+        std::string          m_name;
+        std::vector<int32_t> m_rawData;
+        std::string          m_data;
 
         void dump(std::ostream& stream) const;
     };

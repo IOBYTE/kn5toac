@@ -5,56 +5,106 @@
 #include <algorithm>
 #include <list>
 #include <limits>
+#include <cmath>
+#include <stdexcept>
 
 int32_t kn5::readInt32(std::istream& stream)
 {
-    int32_t value;
+    int32_t value = 0;
     stream.read(reinterpret_cast<char*>(&value), sizeof(int32_t));
     return value;
 }
 
 float kn5::readFloat(std::istream& stream)
 {
-    float value;
+    float value = 0;
     stream.read(reinterpret_cast<char*>(&value), sizeof(float));
     return value;
 }
 
 uint8_t kn5::readUint8(std::istream& stream)
 {
-    uint8_t value;
+    uint8_t value = 0;
     stream.read(reinterpret_cast<char*>(&value), sizeof(uint8_t));
     return value;
 }
 
 uint16_t kn5::readUint16(std::istream& stream)
 {
-    uint16_t value;
+    uint16_t value = 0;
     stream.read(reinterpret_cast<char*>(&value), sizeof(uint16_t));
     return value;
 }
 
 uint32_t kn5::readUint32(std::istream& stream)
 {
-    uint32_t value;
+    uint32_t value = 0;
     stream.read(reinterpret_cast<char*>(&value), sizeof(uint32_t));
     return value;
 }
 
 bool kn5::readBool(std::istream& stream)
 {
-    bool value;
-    stream.read(reinterpret_cast<char*>(&value), sizeof(bool));
-    return value;
+    // read the raw byte: storing anything other than 0 or 1 in a bool is undefined
+    return readUint8(stream) != 0;
+}
+
+size_t kn5::bytesRemaining(std::istream& stream)
+{
+    const std::streampos position = stream.tellg();
+
+    if (position == std::streampos(-1))
+        return SIZE_MAX;
+
+    stream.seekg(0, std::ios::end);
+    const std::streampos end = stream.tellg();
+    stream.seekg(position);
+
+    if (end == std::streampos(-1) || end < position)
+        return SIZE_MAX;
+
+    return static_cast<size_t>(end - position);
+}
+
+bool kn5::isPlainFileName(const std::string& name)
+{
+    if (name.empty() || name == "." || name == "..")
+        return false;
+
+    for (const char c : name)
+    {
+        if (c == '/' || c == '\\' || c == ':' || static_cast<unsigned char>(c) < 0x20)
+            return false;
+    }
+
+    return true;
+}
+
+size_t kn5::readCount(std::istream& stream, size_t minElementSize)
+{
+    const int32_t count = readInt32(stream);
+
+    if (!stream)
+        throw std::runtime_error("Unexpected end of file reading count");
+
+    if (count < 0)
+        throw std::runtime_error("Invalid count: " + std::to_string(count));
+
+    if (minElementSize != 0 && static_cast<size_t>(count) > bytesRemaining(stream) / minElementSize)
+        throw std::runtime_error("Count " + std::to_string(count) + " is larger than the rest of the file");
+
+    return static_cast<size_t>(count);
 }
 
 std::string kn5::readString(std::istream& stream, size_t length)
 {
-    char* text = new char[length + 1];
-    text[length] = 0;
-    stream.read(text, length);
-    std::string string(text, length);
-    delete[] text;
+    if (length > bytesRemaining(stream))
+        throw std::runtime_error("String length " + std::to_string(length) + " is larger than the rest of the file");
+
+    std::string string(length, '\0');
+    stream.read(string.data(), static_cast<std::streamsize>(length));
+    if (static_cast<size_t>(stream.gcount()) != length)
+        throw std::runtime_error("Unexpected end of file reading string");
     return string;
 }
 
@@ -152,16 +202,18 @@ void kn5::Matrix::makeIdentity()
 
 std::string kn5::readString(std::istream& stream)
 {
-    return readString(stream, readInt32(stream));
+    const int32_t length = readInt32(stream);
+    if (!stream || length < 0)
+        throw std::runtime_error("Invalid string length: " + std::to_string(length));
+    return readString(stream, static_cast<size_t>(length));
 }
 
 void kn5::Texture::read(std::istream& stream)
 {
     m_type = readInt32(stream);
     m_name = readString(stream);
-    const int size = readInt32(stream);
-    m_data.resize(size);
-    stream.read(m_data.data(), size);
+    m_data.resize(readCount(stream, 1));
+    stream.read(m_data.data(), static_cast<std::streamsize>(m_data.size()));
 }
 
 void kn5::Texture::dump(std::ostream& stream, const std::string& indent) const
@@ -211,12 +263,12 @@ void kn5::Material::read(std::istream& stream)
     m_alphaTested = readBool(stream);
     m_depthMode = static_cast<DepthMode>(readInt32(stream));
 
-    m_shaderProperties.resize(readInt32(stream));
+    m_shaderProperties.resize(readCount(stream, 44));   // name + float + vec2 + vec3 + vec4
 
     for (auto& shaderProperty : m_shaderProperties)
         shaderProperty.read(stream);
 
-    m_textureMappings.resize(readInt32(stream));
+    m_textureMappings.resize(readCount(stream, 12));    // name + slot + texture name
 
     for (auto& textureMapping : m_textureMappings)
         textureMapping.read(stream);
@@ -352,11 +404,26 @@ void kn5::Node::Vertex::dump(std::ostream& stream, const std::string& indent) co
     }
 }
 
+namespace
+{
+    // Rescales v to unit length (left alone if it has zero length).
+    kn5::Vec3 normalized(const kn5::Vec3& v)
+    {
+        const float length = std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+
+        if (length == 0.0f)
+            return v;
+
+        return kn5::Vec3{ v[0] / length, v[1] / length, v[2] / length };
+    }
+}
+
 void kn5::Node::Vertex::transform(const Matrix& matrix)
 {
     m_position = m_position.transformPoint(matrix);
-    m_normal = m_normal.transformVector(matrix);
-    m_tangent = m_tangent.transformVector(matrix);
+    // a matrix with scaling changes the length of normals and tangents; keep them unit length
+    m_normal = normalized(m_normal.transformVector(matrix));
+    m_tangent = normalized(m_tangent.transformVector(matrix));
 }
 
 void kn5::Node::BoundingSphere::read(std::istream& stream)
@@ -423,13 +490,16 @@ void kn5::Node::Bone::dump(std::ostream& stream, const std::string& indent) cons
     m_matrix.dump(stream, indent);
 }
 
-void kn5::Node::read(std::istream& stream, Node* parent)
+void kn5::Node::read(std::istream& stream, Node* parent, int depth)
 {
+    if (depth > MaxNodeDepth)
+        throw std::runtime_error("Node hierarchy nested deeper than " + std::to_string(MaxNodeDepth) + " levels");
+
     m_parent = parent;
     m_type = static_cast<NodeType>(readInt32(stream));
     m_name = readString(stream);
 
-    m_children.resize(readInt32(stream));
+    m_children.resize(readCount(stream, 13));          // smallest possible node
 
     m_active = readBool(stream);
 
@@ -445,18 +515,18 @@ void kn5::Node::read(std::istream& stream, Node* parent)
 
         if (m_type == SkinnedMesh)
         {
-            m_bones.resize(readInt32(stream));
+            m_bones.resize(readCount(stream, 68));         // name + matrix
 
             for (auto& bone : m_bones)
                 bone.read(stream);
         }
 
-        m_vertices.resize(readInt32(stream));
+        m_vertices.resize(readCount(stream, m_type == SkinnedMesh ? 76 : 44));
 
         for (auto& vertex : m_vertices)
             vertex.read(stream, m_type == SkinnedMesh);
 
-        m_indices.resize(readInt32(stream));
+        m_indices.resize(readCount(stream, 2));
 
         for (auto& index : m_indices)
             index = readUint16(stream);
@@ -474,7 +544,31 @@ void kn5::Node::read(std::istream& stream, Node* parent)
     }
 
     for (auto & child : m_children)
-        child.read(stream, this);
+        child.read(stream, this, depth + 1);
+}
+
+void kn5::Node::validate(size_t materialCount) const
+{
+    if (m_type == Mesh || m_type == SkinnedMesh)
+    {
+        if (m_materialID < 0 || static_cast<size_t>(m_materialID) >= materialCount)
+            throw std::runtime_error("Mesh " + m_name + ": material ID " + std::to_string(m_materialID) +
+                                     " out of range (" + std::to_string(materialCount) + " materials)");
+
+        if (m_indices.size() % 3 != 0)
+            throw std::runtime_error("Mesh " + m_name + ": index count " + std::to_string(m_indices.size()) +
+                                     " is not a multiple of 3");
+
+        for (const auto index : m_indices)
+        {
+            if (index >= m_vertices.size())
+                throw std::runtime_error("Mesh " + m_name + ": vertex index " + std::to_string(index) +
+                                         " out of range (" + std::to_string(m_vertices.size()) + " vertices)");
+        }
+    }
+
+    for (const auto& child : m_children)
+        child.validate(materialCount);
 }
 
 void kn5::Node::transform(const Matrix& matrix)
@@ -524,8 +618,14 @@ bool kn5::Node::removeChild(Node* child)
     return false;
 }
 
+// Removes transform nodes with no children anywhere below this node.
+// Children are cleaned first, so a group that only contained empty groups is
+// removed as well.
 void kn5::Node::removeEmptyNodes()
 {
+    for (auto& child : m_children)
+        child.removeEmptyNodes();
+
     for (std::vector<Node>::iterator it = m_children.begin(); it != m_children.end(); )
     {
         if (it->m_type == Transform && it->m_children.empty())
@@ -535,6 +635,9 @@ void kn5::Node::removeEmptyNodes()
     }
 }
 
+// Removes inactive transform nodes (and everything under them) anywhere below
+// this node. Inactive nodes are removed before recursing, so their subtrees
+// are never visited.
 void kn5::Node::removeInactiveNodes()
 {
     for (std::vector<Node>::iterator it = m_children.begin(); it != m_children.end(); )
@@ -544,6 +647,9 @@ void kn5::Node::removeInactiveNodes()
         else
             it++;
     }
+
+    for (auto& child : m_children)
+        child.removeInactiveNodes();
 }
 
 void kn5::Node::dump(std::ostream& stream, const std::string& indent) const
@@ -638,7 +744,7 @@ void kn5::Node::dumpHierarchy(std::ostream& stream, const std::string& indent) c
 
 void kn5::readTextures(std::istream& stream)
 {
-    m_textures.resize(readInt32(stream));
+    m_textures.resize(readCount(stream, 12));     // type + name + size
 
     for (auto& texture : m_textures)
         texture.read(stream);
@@ -646,7 +752,7 @@ void kn5::readTextures(std::istream& stream)
 
 void kn5::readMaterials(std::istream& stream)
 {
-    m_materials.resize(readInt32(stream));
+    m_materials.resize(readCount(stream, 22));    // smallest possible material
 
     for (auto& material : m_materials)
         material.read(stream);
@@ -676,6 +782,8 @@ void kn5::read(const std::string& name)
     readMaterials(stream);
 
     m_node.read(stream, nullptr);
+
+    m_node.validate(m_materials.size());
 }
 
 void kn5::dump(std::ostream& stream) const
@@ -747,6 +855,12 @@ kn5::Node* kn5::findNode(Node &node, Node::NodeType type, const std::string& nam
 
 kn5::Node* kn5::findNode(Node::NodeType type, const std::string& name)
 {
+    // An empty name almost always means a missing ini value (getValue returns
+    // ""). Matching it would pick whichever mesh happens to have no name, so
+    // treat it as "not found".
+    if (name.empty())
+        return nullptr;
+
     return findNode(m_node, type, name);
 }
 
@@ -768,5 +882,9 @@ const kn5::Node* kn5::findNode(const Node& node, Node::NodeType type, const std:
 
 const kn5::Node* kn5::findNode(Node::NodeType type, const std::string& name) const
 {
+    // see the non-const overload: an empty name never matches
+    if (name.empty())
+        return nullptr;
+
     return findNode(m_node, type, name);
 }

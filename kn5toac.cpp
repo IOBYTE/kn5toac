@@ -6,16 +6,181 @@
 
 #include <fstream>
 #include <filesystem>
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstdlib>
+#include <iostream>
+#include <limits>
+#include <list>
+#include <set>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX            // keep windows.h from defining min/max macros
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#else
+#include <spawn.h>
+#include <sys/wait.h>
+extern char** environ;
+#endif
 
 namespace
 {
-    void quote(std::string& string)
+    // Ambient level written to every material ("amb a a a"), set with -a.
+    // Speed Dreams' stock car bodies use 0.2, but with the car shader off the
+    // side away from the sun then shows at only ~10-15% of the texture's
+    // brightness. 0.6 keeps converted cars readable in shadow.
+    constexpr float defaultMaterialAmbient = 0.6f;
+    float materialAmbient = defaultMaterialAmbient;
+
+    // Escapes text for use inside a double-quoted XML attribute, so names such
+    // as "Lotus & Caterham" or ones containing quotes don't break the file.
+    std::string xmlEscape(const std::string& text)
     {
-        if (string.find(' ') != std::string::npos)
+        std::string escaped;
+        escaped.reserve(text.size());
+
+        for (const char c : text)
         {
-            string.insert(0, 1, '"');
-            string.append(1, '"');
+            switch (c)
+            {
+            case '&':  escaped += "&amp;";  break;
+            case '<':  escaped += "&lt;";   break;
+            case '>':  escaped += "&gt;";   break;
+            case '"':  escaped += "&quot;"; break;
+            case '\'': escaped += "&apos;"; break;
+            default:   escaped += c;        break;
+            }
         }
+
+        return escaped;
+    }
+
+#ifdef _WIN32
+    // Quotes one argument so the receiving program's C runtime splits it back
+    // out unchanged (the CommandLineToArgvW rules: backslashes are literal
+    // except before a quote, quotes are escaped with a backslash).
+    std::string quoteWindowsArgument(const std::string& argument)
+    {
+        if (!argument.empty() && argument.find_first_of(" \t\n\v\"") == std::string::npos)
+            return argument;
+
+        std::string quoted = "\"";
+
+        for (size_t i = 0; ; i++)
+        {
+            size_t backslashes = 0;
+
+            while (i < argument.size() && argument[i] == '\\')
+            {
+                backslashes++;
+                i++;
+            }
+
+            if (i == argument.size())
+            {
+                quoted.append(backslashes * 2, '\\');   // double them before the closing quote
+                break;
+            }
+
+            if (argument[i] == '"')
+                quoted.append(backslashes * 2 + 1, '\\');   // escape the backslashes and the quote
+            else
+                quoted.append(backslashes, '\\');
+
+            quoted.push_back(argument[i]);
+        }
+
+        quoted.push_back('"');
+
+        return quoted;
+    }
+#endif
+
+    // Runs a program directly, without a shell, and waits for it. Each element
+    // of arguments reaches the program as exactly one argument, so file names
+    // taken from car files can't inject shell commands. Returns the exit code,
+    // or -1 if the program couldn't be started.
+    int runProgram(const std::vector<std::string>& arguments)
+    {
+#ifdef _WIN32
+        std::string commandLine;
+
+        for (const auto& argument : arguments)
+        {
+            if (!commandLine.empty())
+                commandLine.push_back(' ');
+
+            commandLine += quoteWindowsArgument(argument);
+        }
+
+        STARTUPINFOA        startupInfo = {};
+        PROCESS_INFORMATION processInfo = {};
+
+        startupInfo.cb = sizeof(startupInfo);
+
+        // no application name: the program is looked up on PATH like a shell would
+        if (!CreateProcessA(nullptr, commandLine.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &startupInfo, &processInfo))
+            return -1;
+
+        WaitForSingleObject(processInfo.hProcess, INFINITE);
+
+        DWORD exitCode = 1;
+
+        GetExitCodeProcess(processInfo.hProcess, &exitCode);
+        CloseHandle(processInfo.hThread);
+        CloseHandle(processInfo.hProcess);
+
+        return static_cast<int>(exitCode);
+#else
+        std::vector<char*> argv;
+
+        for (const auto& argument : arguments)
+            argv.push_back(const_cast<char*>(argument.c_str()));
+
+        argv.push_back(nullptr);
+
+        pid_t pid = 0;
+
+        if (posix_spawnp(&pid, argv[0], nullptr, nullptr, argv.data(), environ) != 0)
+            return -1;
+
+        int status = 0;
+
+        if (waitpid(pid, &status, 0) == -1)
+            return -1;
+
+        return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+#endif
+    }
+
+    // Converts an image with ImageMagick 7 ("magick source [-alpha off] destination").
+    // "magick convert" still works in IM7 but prints a deprecation warning for
+    // every file.
+    // ImageMagick gives special meaning to file names that start with '|', '@',
+    // '-' or "format:", so both paths are made absolute first; an absolute path
+    // starts with '/' or a drive letter and can't be read any other way.
+    bool convertImage(const std::filesystem::path& source, const std::filesystem::path& destination, bool alphaOff)
+    {
+        std::vector<std::string> arguments = { "magick", std::filesystem::absolute(source).string() };
+
+        if (alphaOff)
+        {
+            arguments.push_back("-alpha");
+            arguments.push_back("off");
+        }
+
+        arguments.push_back(std::filesystem::absolute(destination).string());
+
+        return runProgram(arguments) == 0;
     }
 
     void remove(kn5& model, kn5::Node::NodeType type, const std::string& name)
@@ -26,24 +191,38 @@ namespace
             node->m_parent->removeChild(node);
     }
 
+    // Loads an ini file that some cars don't have. A missing file gives an empty
+    // ini (so hasSections() is false) and a warning instead of an exception.
+    ini loadOptionalIni(const std::string& directory, const std::string& name)
+    {
+        ini file;
+        const std::string path = std::filesystem::path(directory).append(name).string();
+
+        if (!file.readIfExists(path))
+            std::cerr << "Warning: couldn't find " << path << std::endl;
+
+        return file;
+    }
+
     void writeConfig(const std::filesystem::path& inputPath, const std::string& dataDirectoryPath, const std::string& filename, const kn5& model, float length, float width, float height, const std::string& category, bool outputACC)
     {
-        ini aero(std::filesystem::path(dataDirectoryPath).append("aero.ini").string());
-        ini brakes(std::filesystem::path(dataDirectoryPath).append("brakes.ini").string());
+        // car.ini is required; the rest are optional
         ini car(std::filesystem::path(dataDirectoryPath).append("car.ini").string());
+        ini aero = loadOptionalIni(dataDirectoryPath, "aero.ini");
+        ini brakes = loadOptionalIni(dataDirectoryPath, "brakes.ini");
         //ini colliders(std::filesystem::path(dataDirectoryPath).append("colliders.ini").string());
-        ini drivetrain(std::filesystem::path(dataDirectoryPath).append("drivetrain.ini").string());
+        ini drivetrain = loadOptionalIni(dataDirectoryPath, "drivetrain.ini");
         //ini electronics;
         //if (std::filesystem::exists(std::filesystem::path(dataDirectoryPath).append("electronics.ini").string()))
         //    electronics.read(std::filesystem::path(dataDirectoryPath).append("electronics.ini").string());
-        ini engine(std::filesystem::path(dataDirectoryPath).append("engine.ini").string());
+        ini engine = loadOptionalIni(dataDirectoryPath, "engine.ini");
         //ini lods(std::filesystem::path(dataDirectoryPath).append("lods.ini").string());
         //ini flames;
         //if (std::filesystem::exists(std::filesystem::path(dataDirectoryPath).append("flames.ini").string()))
         //    flames.read(std::filesystem::path(dataDirectoryPath).append("flames.ini").string());
-        ini setup(std::filesystem::path(dataDirectoryPath).append("setup.ini").string());
-        ini suspensions(std::filesystem::path(dataDirectoryPath).append("suspensions.ini").string());
-        ini tires(std::filesystem::path(dataDirectoryPath).append("tyres.ini").string());
+        ini setup = loadOptionalIni(dataDirectoryPath, "setup.ini");
+        ini suspensions = loadOptionalIni(dataDirectoryPath, "suspensions.ini");
+        ini tires = loadOptionalIni(dataDirectoryPath, "tyres.ini");
 
         std::string modelFileName = inputPath.filename().string() + (outputACC ? ".acc" : ".ac");
 
@@ -59,7 +238,7 @@ namespace
 
         //---------------------------------------------------------------------
 
-        fout << "<params name=\"" << car.getValue("INFO", "SCREEN_NAME") << "\" type=\"template\">" << std::endl;
+        fout << "<params name=\"" << xmlEscape(car.getValue("INFO", "SCREEN_NAME")) << "\" type=\"template\">" << std::endl;
 
         //---------------------------------------------------------------------
 
@@ -99,7 +278,7 @@ namespace
         //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Graphic Objects\">" << std::endl;
-        fout << "\t\t<attstr name=\"env\" val=\"" << modelFileName << "\"/>" << std::endl;
+        fout << "\t\t<attstr name=\"env\" val=\"" << xmlEscape(modelFileName) << "\"/>" << std::endl;
         // fout << "\t\t<attstr name=\"wheel texture\" val=\"" << "tex-wheel.png" << "\"/>" << std::endl;
         // fout << "\t\t<attstr name=\"shadow texture\" val=\"" << "shadow.png" << "\"/>" << std::endl;
         // fout << "\t\t<attstr name=\"tachometer texture\" val=\"" << "rpm20000.png" << "\"/>" << std::endl;
@@ -115,7 +294,7 @@ namespace
         fout << "\t\t<section name=\"Ranges\">" << std::endl;
         fout << "\t\t\t<section name=\"1\">" << std::endl;
         fout << "\t\t\t\t<attnum name=\"threshold\" val=\"" << 0 << "\"/>" << std::endl;
-        fout << "\t\t\t\t<attstr name=\"car\" val=\"" << modelFileName << "\"/>" << std::endl;
+        fout << "\t\t\t\t<attstr name=\"car\" val=\"" << xmlEscape(modelFileName) << "\"/>" << std::endl;
         // fout << "\t\t\t\t<attstr name=\"wheels\" val=\"yes\"/>" << std::endl;
         fout << "\t\t\t</section>" << std::endl;
         fout << "\t\t</section>" << std::endl;
@@ -167,12 +346,15 @@ namespace
         //---------------------------------------------------------------------
 
         fout << "\t<section name=\"Car\">" << std::endl;
-        fout << "\t\t<attstr name=\"category\" val=\"" << category << "\"/>" << std::endl;
+        fout << "\t\t<attstr name=\"category\" val=\"" << xmlEscape(category) << "\"/>" << std::endl;
         //    fout << "\t\t<attnum name=\"body length\" unit=\"m\" val=\"" << 4.86 << "\"/>" << std::endl;
         //    fout << "\t\t<attnum name=\"body width\" unit=\"m\" val=\"" << 2.00 << "\"/>" << std::endl;
         //    fout << "\t\t<attnum name=\"body height\" unit=\"m\" val=\"" << 1.05 << "\"/>" << std::endl;
-        fout << "\t\t<attnum name=\"overall length\" unit=\"m\" val=\"" << length << "\"/>" << std::endl;
-        fout << "\t\t<attnum name=\"overall width\" unit=\"m\" val=\"" << width << "\"/>" << std::endl;
+        // length/width are 0 when the collider had no geometry; leave them out rather than write a bogus size
+        if (length > 0)
+            fout << "\t\t<attnum name=\"overall length\" unit=\"m\" val=\"" << length << "\"/>" << std::endl;
+        if (width > 0)
+            fout << "\t\t<attnum name=\"overall width\" unit=\"m\" val=\"" << width << "\"/>" << std::endl;
         fout << "\t\t<attnum name=\"mass\" unit=\"kg\" val=\"" << car.getValue("BASIC", "TOTALMASS") << "\"/>" << std::endl;
         //    fout << "\t\t<attnum name=\"GC height\" unit=\"m\" val=\"" << 0.24 << "\"/>" << std::endl;
         fout << "\t\t<attnum name=\"front-rear weight repartition\" val=\"" << suspensions.getValue("BASIC", "CG_LOCATION") << "\"/>" << std::endl;
@@ -200,7 +382,7 @@ namespace
 
             cdLutFilePath.append(cdLutFile);
 
-            if (std::filesystem::exists(cdLutFilePath))
+            if (!cdLutFile.empty() && std::filesystem::is_regular_file(cdLutFilePath))
             {
                 lut cdLut(cdLutFilePath.string());
 
@@ -219,7 +401,7 @@ namespace
 
                 clLutFilePath.append(clLutFile);
 
-                if (std::filesystem::exists(cdLutFilePath))
+                if (!clLutFile.empty() && std::filesystem::is_regular_file(clLutFilePath))
                 {
                     lut clLut(clLutFilePath.string());
 
@@ -269,10 +451,13 @@ namespace
                 powerPath.append(powerLutFileName);
                 lut power(powerPath.string());
                 values = power.getValues();
-                fout << "\t\t<attnum name=\"revs maxi\" unit=\"rpm\" min=\"5000\" max=\"10000\" val=\"" << values[values.size() - 1].first << "\"/>" << std::endl;
+                if (!values.empty())
+                    fout << "\t\t<attnum name=\"revs maxi\" unit=\"rpm\" min=\"5000\" max=\"10000\" val=\"" << values.back().first << "\"/>" << std::endl;
+                else
+                    std::cerr << "Power curve has no data points: " << powerPath.string() << std::endl;
             }
             else
-                std::cerr << "Couldn't find [HEADER] POEWR_CURVE: " << engine.getFileName() << std::endl;
+                std::cerr << "Couldn't find [HEADER] POWER_CURVE: " << engine.getFileName() << std::endl;
             fout << "\t\t<attnum name=\"revs limiter\" unit=\"rpm\" val=\"" << engine.getValue("ENGINE_DATA", "LIMITER") << "\"/>" << std::endl;
             fout << "\t\t<attnum name=\"tickover\" unit=\"rpm\" val=\"" << engine.getValue("ENGINE_DATA", "MINIMUM") << "\"/>" << std::endl;
             //	<attnum name="fuel cons factor" min="1.1" max="1.3" val="1.13"/>
@@ -356,7 +541,7 @@ namespace
         if (traction == "AWD")
             traction = "4WD";
         if (!traction.empty())
-            fout << "\t\t<attstr name=\"type\" val=\"" << traction << "\"/>" << std::endl;
+            fout << "\t\t<attstr name=\"type\" val=\"" << xmlEscape(traction) << "\"/>" << std::endl;
         //fout << "\t\t<attnum name=\"inertia\" unit=\"kg.m2\" val=\"" << 0.0091 << "\"/>" << std::endl;
         fout << "\t</section>" << std::endl;
 
@@ -553,7 +738,7 @@ namespace
         {
             fout << "\t\t<attnum name=\"spring\" unit=\"N/m\" min=\""
                  << setup.getFloatValue("ARB_REAR", "MIN", 0.0f) << "\" max=\""
-                 << setup.getFloatValue("ARB_REAR", "MIN", 200000.0f) << "\" val=\""
+                 << setup.getFloatValue("ARB_REAR", "MAX", 200000.0f) << "\" val=\""
                  << suspensions.getValue("ARB", "REAR") << "\"/>" << std::endl;
         }
         fout << "\t</section>" << std::endl;
@@ -681,6 +866,13 @@ namespace
 
         for (size_t i = 0; i < model.m_textures.size(); i++)
         {
+            // texture names come from the kn5 file: never let one escape the output folder
+            if (!kn5::isPlainFileName(model.m_textures[i].m_name))
+            {
+                std::cerr << "Warning: skipping texture with unsafe name: " << model.m_textures[i].m_name << std::endl;
+                continue;
+            }
+
             std::filesystem::path texturePath(directory);
 
             texturePath.append(model.m_textures[i].m_name);
@@ -715,28 +907,22 @@ namespace
                     if (deleteDDS)
                         filesToDelete.insert(texturePathString);
 
-                    quote(texturePathString);
-
-                    std::string command("magick convert " + texturePathString + " ");
+                    bool alphaOff = false;
 
                     for (const auto& material : model.m_materials)
                     {
-                        if (material.m_textureMappings[0].m_textureName == model.m_textures[i].m_name)
+                        if (!material.m_textureMappings.empty() && material.m_textureMappings[0].m_textureName == model.m_textures[i].m_name)
                         {
                             if (material.m_alphaBlendMode == kn5::Material::Opaque)
                             {
-                                command += "-alpha off ";
+                                alphaOff = true;
 
                                 break;
                             }
                         }
                     }
 
-                    quote(png);
-
-                    command += png;
-
-                    if (system(command.c_str()) != 0)
+                    if (!convertImage(texturePathString, png, alphaOff))
                         std::cerr << "failed to convert " << texturePathString << " to " << png << std::endl;
                 }
             }
@@ -762,35 +948,28 @@ namespace
 
             fout << "MATERIAL " << "\"" << materialName << "\"";
 
-            const kn5::ShaderProperty* property = material.findShaderProperty("ksDiffuse");
+            // Diffuse and ambient don't come from AC's ksDiffuse/ksAmbient. Those
+            // are tuned for AC's much brighter shader lighting (typically 0.2-0.5)
+            // and multiply the texture down, which makes converted cars far too
+            // dark in Speed Dreams. Diffuse is 1 as in Speed Dreams' stock cars
+            // (e.g. sc-cavallo-360); ambient is materialAmbient (-a).
+            fout << " rgb 1 1 1";
+            fout << "  amb " << materialAmbient << " " << materialAmbient << " " << materialAmbient;
 
-            if (property != nullptr)
-            {
-                const float rgb = std::clamp(property->m_value, 0.0f, 1.0f);
-                fout << " rgb " << rgb << " " << rgb << " " << rgb;
-            }
-            else
-                fout << " rgb 1 1 1";
-
-            property = material.findShaderProperty("ksAmbient");
-
-            if (property != nullptr)
-            {
-                const float amb = std::clamp(property->m_value, 0.0f, 1.0f);
-                fout << "  amb " << amb << " " << amb << " " << amb;
-            }
-            else
-                fout << "  amb 1 1 1";
+            const kn5::ShaderProperty* property = nullptr;
 
             property = material.findShaderProperty("ksEmissive");
 
             if (property != nullptr)
             {
-                const float emis = std::clamp(property->m_value, 0.0f, 1.0f);
-                fout << "  emis " << emis << " " << emis << " " << emis;
+                // ksEmissive is a colour (value3); fall back to the single value if that's all a file sets
+                const bool hasColor = property->m_value3[0] != 0 || property->m_value3[1] != 0 || property->m_value3[2] != 0;
+                fout << "  emis";
+                for (size_t i = 0; i < 3; i++)
+                    fout << " " << std::clamp(hasColor ? property->m_value3[i] : property->m_value, 0.0f, 1.0f);
             }
             else
-                fout << "  emis 1 1 1";
+                fout << "  emis 0 0 0";     // no ksEmissive: not self-lit
 
             property = material.findShaderProperty("ksSpecular");
 
@@ -800,7 +979,7 @@ namespace
                 fout << "  spec " << spec << " " << spec << " " << spec;
             }
             else
-                fout << "  spec 1 1 1";
+                fout << "  spec 0 0 0";     // no ksSpecular: not shiny
 
             property = material.findShaderProperty("ksSpecularEXP");  // FIXME is this the right parameter?
 
@@ -863,17 +1042,19 @@ namespace
             fout << "OBJECT poly" << std::endl;
             fout << "name \"" << node.m_name << "\"" << std::endl;
 
+            // node.m_materialID was range-checked when the model was loaded
             std::string texture;
             const kn5::TextureMapping* txDiffuse = model.m_materials[node.m_materialID].findTextureMapping("txDiffuse");
+            const std::string diffuseName = txDiffuse ? txDiffuse->m_textureName : std::string();
 
             if (useDiffuse)
-                texture = txDiffuse->m_textureName;
+                texture = diffuseName;
             else
             {
                 const kn5::ShaderProperty* useDetail = model.m_materials[node.m_materialID].findShaderProperty("useDetail");
                 const kn5::TextureMapping* txDetail = model.m_materials[node.m_materialID].findTextureMapping("txDetail");
 
-                texture = ((useDetail && useDetail->m_value != 0.0f) && txDetail) ? txDetail->m_textureName : txDiffuse->m_textureName;
+                texture = ((useDetail && useDetail->m_value != 0.0f) && txDetail) ? txDetail->m_textureName : diffuseName;
             }
 
             if (convertToPNG && (texture.find(".png") == std::string::npos && texture.find(".PNG") == std::string::npos))
@@ -888,7 +1069,10 @@ namespace
                     texture = texture.substr(0, extension) + ".png";
             }
 
-            if (outputACC)
+            // a material with no diffuse texture gets an untextured object
+            if (texture.empty())
+                std::cerr << "Warning: no diffuse texture for mesh " << node.m_name << std::endl;
+            else if (outputACC)
             {
                 fout << "texture \"" << texture << "\" base" << std::endl;
                 fout << "texture empty_texture_no_mapping tiled" << std::endl;
@@ -934,7 +1118,8 @@ namespace
                 {
                     property = model.m_materials[node.m_materialID].findShaderProperty("detailUVMultiplier");
 
-                    if (property != nullptr)
+                    // 0 would give an infinite UV scale; keep 1 in that case
+                    if (property != nullptr && property->m_value != 0.0f)
                         uvMult = 1 / property->m_value;
                 }
             }
@@ -952,13 +1137,18 @@ namespace
 
                 std::array<Ref, 3>  m_refs;
 
+                // True for a zero-area triangle. Compares |e1 x e2| (= |e1||e2| sin angle)
+                // with |e1||e2|, so the test doesn't depend on the triangle's size:
+                // it drops triangles whose edges are parallel to within about 1e-6
+                // radians, or that have a zero-length edge.
                 bool collinearVertices() const
                 {
-                    constexpr float epsilon = std::numeric_limits<float>::epsilon();
-                    kn5::Vec3 v = kn5::Vec3{ m_refs[1].m_vertex - m_refs[0].m_vertex }.cross(m_refs[2].m_vertex - m_refs[0].m_vertex);
-                    return std::fabs(v[0]) < epsilon &&
-                        std::fabs(v[1]) < epsilon &&
-                        std::fabs(v[2]) < epsilon;
+                    const kn5::Vec3 e1 = m_refs[1].m_vertex - m_refs[0].m_vertex;
+                    const kn5::Vec3 e2 = m_refs[2].m_vertex - m_refs[0].m_vertex;
+                    const kn5::Vec3 v = e1.cross(e2);
+                    const auto lengthSquared = [](const kn5::Vec3& a) { return a[0] * a[0] + a[1] * a[1] + a[2] * a[2]; };
+                    constexpr float sinLimit = 1e-6f;
+                    return lengthSquared(v) <= sinLimit * sinLimit * lengthSquared(e1) * lengthSquared(e2);
                 }
             };
 
@@ -1046,6 +1236,35 @@ namespace
         writeAc3d(model, file, model.m_node, convertToPNG, outputACC, useDiffuse);
     }
 
+    // Grows minimum/maximum to cover every mesh vertex at or below node, in the
+    // coordinates of the model's root: each vertex is transformed by the
+    // matrices of all the transform nodes above it. vertexCount counts the
+    // vertices seen, so the caller can tell an empty model from a real box.
+    void accumulateBounds(const kn5::Node& node, const kn5::Matrix& parentTransform, kn5::Vec3& minimum, kn5::Vec3& maximum, size_t& vertexCount)
+    {
+        // same order as kn5::Node::getTransform(): local first, then parent
+        const kn5::Matrix transform = node.m_type == kn5::Node::Transform ? parentTransform.multiply(node.m_matrix) : parentTransform;
+
+        if (node.m_type == kn5::Node::Mesh || node.m_type == kn5::Node::SkinnedMesh)
+        {
+            for (const auto& vertex : node.m_vertices)
+            {
+                const kn5::Vec3 position = vertex.m_position.transformPoint(transform);
+
+                for (size_t i = 0; i < 3; i++)
+                {
+                    minimum[i] = std::min(minimum[i], position[i]);
+                    maximum[i] = std::max(maximum[i], position[i]);
+                }
+            }
+
+            vertexCount += node.m_vertices.size();
+        }
+
+        for (const auto& child : node.m_children)
+            accumulateBounds(child, transform, minimum, maximum, vertexCount);
+    }
+
     bool extract(kn5& model, const std::string& name, const kn5::Matrix& xform, const std::string& file)
     {
         kn5::Node* transformNode = model.findNode(kn5::Node::Transform, name);
@@ -1070,17 +1289,18 @@ namespace
 
     void usage()
     {
-        std::cout << "Usage: kn5toac -c category -i input_directory [-o output_directory] [-n kn5_filename] [-s skin_filename] [-d]" << std::endl;
+        std::cout << "Usage: kn5toac -c category -i input_directory [-o output_directory] [-n kn5_filename] [-s skin_filename] [-a ambient] [-d]" << std::endl;
         std::cout << " -c category           Speed Dreams category to add this car to." << std::endl;
         std::cout << " -i input_directory    Assetto Corsa car directory of car to convert." << std::endl;
         std::cout << " -o output_directory   Speed Dreams directory where converted car will be installed." << std::endl;
         std::cout << " -n kn5_filename       Assetto Corsa car model to convert if different form directory name." << std::endl;
         std::cout << " -s skin_filename      Assetto Corsa skin texture file name" << std::endl;
+        std::cout << " -a ambient            Material ambient level, 0 to 1 (default " << defaultMaterialAmbient << "). Higher is brighter in shadow." << std::endl;
         std::cout << " -d                    Dumps kn5 files and doesn't delete dds textures and data directory." << std::endl;
     }
 }
 
-int main(int argc, char* argv[])
+static int run(int argc, char* argv[])
 {
     bool        writeModel = false;
     bool        dumpModel = false;
@@ -1112,7 +1332,7 @@ int main(int argc, char* argv[])
         std::string arg(argv[i]);
         if (arg == "-c")
         {
-            if (i < argc)
+            if (i + 1 < argc)
             {
                 i++;
                 category = argv[i];
@@ -1139,7 +1359,7 @@ int main(int argc, char* argv[])
         }
         else if (arg == "-i")
         {
-            if (i < argc)
+            if (i + 1 < argc)
             {
                 i++;
                 inputDirectory = argv[i];
@@ -1152,7 +1372,7 @@ int main(int argc, char* argv[])
         }
         else if (arg == "-n")
         {
-            if (i < argc)
+            if (i + 1 < argc)
             {
                 i++;
                 inputFileName = argv[i];
@@ -1165,7 +1385,7 @@ int main(int argc, char* argv[])
         }
         else if (arg == "-o")
         {
-            if (i < argc)
+            if (i + 1 < argc)
             {
                 i++;
                 outputDirectory = argv[i];
@@ -1184,9 +1404,41 @@ int main(int argc, char* argv[])
                 return EXIT_FAILURE;
             }
         }
+        else if (arg == "-a")
+        {
+            float value = -1;
+
+            if (i + 1 < argc)
+            {
+                i++;
+
+                try
+                {
+                    size_t used = 0;
+                    value = std::stof(argv[i], &used);
+
+                    if (used != std::string(argv[i]).size())
+                        value = -1;
+                }
+                catch (const std::logic_error&)
+                {
+                    value = -1;
+                }
+            }
+
+            // also rejects NaN, since NaN fails both comparisons
+            if (!(value >= 0.0f && value <= 1.0f))
+            {
+                std::cerr << "-a needs a number from 0 to 1" << std::endl;
+                usage();
+                return EXIT_FAILURE;
+            }
+
+            materialAmbient = value;
+        }
         else if (arg == "-s")
         {
-            if (i < argc)
+            if (i + 1 < argc)
             {
                 i++;
                 skinFileName = argv[i];
@@ -1206,14 +1458,68 @@ int main(int argc, char* argv[])
         }
     }
 
-    std::filesystem::path   inputPath(inputDirectory);
-    std::filesystem::path   outputPath(outputDirectory);
+    if (inputDirectory.empty())
+    {
+        std::cerr << "Missing -i input_directory" << std::endl;
+        usage();
+        return EXIT_FAILURE;
+    }
+
+    if (writeCarConfig && category.empty())
+    {
+        std::cerr << "Missing -c category (needed with -o)" << std::endl;
+        usage();
+        return EXIT_FAILURE;
+    }
+
+    // Make the input path absolute and tidy: resolve "." and "..", and drop a
+    // trailing separator, which would otherwise leave filename() empty and the
+    // car with no name. This is done textually, so the folder name keeps the
+    // spelling it was typed with (it is part of the data.acd key).
+    std::filesystem::path   inputPath = std::filesystem::absolute(inputDirectory).lexically_normal();
+
+    if (!inputPath.has_filename())
+        inputPath = inputPath.parent_path();
+
+    if (!std::filesystem::is_directory(inputPath))
+    {
+        std::cerr << "Input directory not found: " << inputPath.string() << std::endl;
+        return EXIT_FAILURE;
+    }
 
     const std::string       inputFileDirectoryName(inputPath.filename().string());
 
+    if (inputFileDirectoryName.empty())
+    {
+        std::cerr << "Input directory must be a car folder, not a drive root: " << inputPath.string() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    // The output's parent must already exist: a mistyped -o shouldn't silently
+    // create a new tree somewhere.
+    if (!outputDirectory.empty() && !std::filesystem::is_directory(outputDirectory))
+    {
+        std::cerr << "Output directory not found: " << outputDirectory << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    std::filesystem::path   outputPath = outputDirectory.empty() ? std::filesystem::current_path() : std::filesystem::absolute(outputDirectory).lexically_normal();
+
     outputPath.append(inputFileDirectoryName);
 
-    // create the output directory if it doesn't exixt
+    if (outputDirectory.empty())
+        std::cerr << "No -o given, writing to " << outputPath.string() << std::endl;
+
+    // -o pointing at the folder that holds the input car would make the output
+    // folder the car itself, and the clean-up below would then delete the
+    // car's own files.
+    if (std::filesystem::exists(outputPath) && std::filesystem::equivalent(outputPath, inputPath))
+    {
+        std::cerr << "Output folder " << outputPath.string() << " is the input car folder; choose a different -o" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    // create the output directory if it doesn't exist
     if (!std::filesystem::exists(outputPath))
     {
         if (!std::filesystem::create_directory(outputPath))
@@ -1222,6 +1528,10 @@ int main(int argc, char* argv[])
             return EXIT_FAILURE;
         }
     }
+
+    // true once data.acd has been unpacked into the output folder; only that
+    // copy is ever deleted at the end
+    bool                    extractedData = false;
 
     // use the data directory in the input directory if it exists
     std::filesystem::path   dataDirectoryPath = inputPath;
@@ -1248,6 +1558,8 @@ int main(int argc, char* argv[])
 
             // write the ini files to the output data directory
             data.writeEntries(dataDirectoryPath.string());
+
+            extractedData = true;
         }
     }
 
@@ -1259,9 +1571,27 @@ int main(int argc, char* argv[])
 
     lodFilePath.append("lods.ini");
 
-    ini lods(lodFilePath.string());
+    ini lods;
 
-    std::string lod0FileName = lods.getValue("LOD_0", "FILE");
+    std::string lod0FileName;
+
+    if (lods.readIfExists(lodFilePath.string()))
+        lod0FileName = lods.getValue("LOD_0", "FILE");
+
+    // the name comes from the car's lods.ini and is also used for dump files
+    // written to the output folder, so it must be a plain file name
+    if (!lod0FileName.empty() && !kn5::isPlainFileName(lod0FileName))
+    {
+        std::cerr << "Invalid [LOD_0] FILE in " << lodFilePath.string() << ": " << lod0FileName << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    // no lods.ini (or no [LOD_0] FILE): treat the input model as lod 0
+    if (lod0FileName.empty())
+    {
+        std::cerr << "Warning: no [LOD_0] FILE in " << lodFilePath.string() << ", using " << inputFileName << " as lod 0" << std::endl;
+        lod0FileName = inputFileName;
+    }
 
     kn5 lod0model;
 
@@ -1298,7 +1628,7 @@ int main(int argc, char* argv[])
 
                 if (txDiffuse && txDiffuse->m_textureName == skinFileName)
                 {
-                    size_t extension = skinFileName.find('.');
+                    size_t extension = skinFileName.rfind('.');
 
                     if (extension != std::string::npos)
                     {
@@ -1382,7 +1712,7 @@ int main(int argc, char* argv[])
     {
         std::filesystem::path dumpFilePath = outputPath;
 
-        dumpFilePath.append(lod0FileName + ".hierarchy.dump");
+        dumpFilePath.append(inputFileName + ".hierarchy.dump");
 
         std::ofstream of(dumpFilePath.string());
 
@@ -1427,31 +1757,26 @@ int main(int argc, char* argv[])
                 collider.dump(of1);
         }
 
-        kn5::Vec3 minimum = { 100000, 100000, 100000 };
-        kn5::Vec3 maximum = { -100000, -100000, -100000 };
+        // bounding box of every collider mesh, with node transforms applied
+        constexpr float infinity = std::numeric_limits<float>::infinity();
+        kn5::Vec3 minimum = { infinity, infinity, infinity };
+        kn5::Vec3 maximum = { -infinity, -infinity, -infinity };
+        size_t vertexCount = 0;
 
-        kn5::Node& mesh = collider.m_node;
-        while (mesh.m_type == kn5::Node::Transform && mesh.m_children.size() == 1)
-            mesh = mesh.m_children[0];
+        accumulateBounds(collider.m_node, kn5::Matrix(), minimum, maximum, vertexCount);
 
-        if (mesh.m_type == kn5::Node::Mesh)
+        float length = 0;
+        float width = 0;
+        float height = 0;
+
+        if (vertexCount > 0)
         {
-            for (const auto& vertex : mesh.m_vertices)
-            {
-                for (size_t i = 0; i < 3; i++)
-                {
-                    if (vertex.m_position[i] < minimum[i])
-                        minimum[i] = vertex.m_position[i];
-
-                    if (vertex.m_position[i] > maximum[i])
-                        maximum[i] = vertex.m_position[i];
-                }
-            }
+            length = maximum[2] - minimum[2];
+            width = maximum[0] - minimum[0];
+            height = maximum[1] - minimum[1];
         }
-
-        float length = maximum[2] - minimum[2];
-        float width = maximum[0] - minimum[0];
-        float height = maximum[1] - minimum[1];
+        else
+            std::cerr << "Warning: no mesh vertices in " << colliderFilePath.string() << ", overall length and width not written" << std::endl;
 
         std::filesystem::path   configFilePath = outputPath;
 
@@ -1528,12 +1853,15 @@ int main(int argc, char* argv[])
 
             iniFilePath.append("brakes.ini");
 
-            const ini brakes(iniFilePath.string());
+            ini brakes;
 
-            remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_LF"));
-            remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_RF"));
-            remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_LR"));
-            remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_RR"));
+            if (brakes.readIfExists(iniFilePath.string()))
+            {
+                remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_LF"));
+                remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_RF"));
+                remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_LR"));
+                remove(model, kn5::Node::Mesh, brakes.getValue("DISCS_GRAPHICS", "DISC_RR"));
+            }
         }
 
         // rename skin texture
@@ -1545,7 +1873,7 @@ int main(int argc, char* argv[])
 
                 if (txDiffuse && txDiffuse->m_textureName == skinFileName)
                 {
-                    size_t extension = skinFileName.find('.');
+                    size_t extension = skinFileName.rfind('.');
 
                     if (extension != std::string::npos)
                     {
@@ -1569,7 +1897,7 @@ int main(int argc, char* argv[])
             {
                 kn5::Node* cockpitLRNode = model.findNode(kn5::Node::Transform, "COCKPIT_LR");
 
-                if (cockpitHRNode)
+                if (cockpitLRNode)
                 {
                     cockpitHRNode->m_active = false;
                     cockpitLRNode->m_active = true;
@@ -1609,7 +1937,9 @@ int main(int argc, char* argv[])
         }
     }
 
-    if (deleteData)
+    // only remove the data folder this run unpacked from data.acd, never one
+    // that was already there
+    if (deleteData && extractedData)
     {
         std::filesystem::path dataDirectory = outputPath;
 
@@ -1640,19 +1970,9 @@ int main(int argc, char* argv[])
 
                     liveryFilePath.append(inputFileDirectoryName + "-" + livery + ".png");
 
-                    std::string liveryFilePathString = liveryFilePath.string();
-
-                    quote(liveryFilePathString);
-
-                    std::string skinFilePathString = skinFilePath.string();
-
-                    quote(skinFilePathString);
-
-                    const std::string command("magick convert " + skinFilePathString + " " + liveryFilePathString);
-
-                    if (system(command.c_str()) == -1)
+                    if (!convertImage(skinFilePath, liveryFilePath, false))
                     {
-                        std::cerr << "failed to convert " << skinFilePathString << " to " << liveryFilePathString << std::endl;
+                        std::cerr << "failed to convert " << skinFilePath.string() << " to " << liveryFilePath.string() << std::endl;
 
                         continue;
                     }
@@ -1798,4 +2118,25 @@ int main(int argc, char* argv[])
     }
 
     return EXIT_SUCCESS;
+}
+
+// Catch anything that escapes run() (missing required ini, unreadable acd/knh,
+// bad lut line, filesystem errors, ...) so the user gets a message instead of
+// std::terminate.
+int main(int argc, char* argv[])
+{
+    try
+    {
+        return run(argc, argv);
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Error: " << e.what() << std::endl;
+    }
+    catch (...)
+    {
+        std::cerr << "Error: unknown exception" << std::endl;
+    }
+
+    return EXIT_FAILURE;
 }
